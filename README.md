@@ -1,2 +1,1 @@
-# Trabalho_Flutter
-Trabalho Bimestral de Dispositivos Móveis - Professor Gustavo
+# Projeto Busão do Rolê
