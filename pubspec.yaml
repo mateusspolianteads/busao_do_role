@@ -1,3 +1,4 @@
+pubspec.yaml:
 name: busao_do_role
 description: "A new Flutter project."
 publish_to: 'none'
@@ -12,6 +13,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   lucide_icons: ^0.257.0
+  http: ^1.2.1
 
 dev_dependencies:
   flutter_test:
