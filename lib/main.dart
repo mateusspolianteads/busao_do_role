@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'views/cadastro_view.dart'; // Importa a tela que criamos
-import 'core/app_colors.dart';    // Importa suas cores
+import 'views/cadastro_view.dart';
+import 'core/app_colors.dart';
+import 'theme_controller.dart';
 
 void main() {
   runApp(const BusaoDoRoleApp());
@@ -11,31 +12,49 @@ class BusaoDoRoleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Busão do Rolê',
-      debugShowCheckedModeBanner: false, // Tira aquela faixa de "Debug" do canto
-      
-      // Configuração de Tema Global
-      theme: ThemeData(
-        brightness: Brightness.dark, // Define que o app é Dark Mode por padrão
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.bgDark,
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeNotifier,
+      builder: (context, ThemeMode currentMode, _) {
         
-        // Aqui você define a fonte 'Inter' globalmente (precisa adicionar no pubspec.yaml)
-        fontFamily: 'Inter', 
-        
-        // Ajuste fino para os botões do app
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        return MaterialApp(
+          title: 'Busão do Rolê',
+          debugShowCheckedModeBanner: false,
+          
+          themeMode: currentMode,
+
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            primaryColor: AppColors.primary,
+            scaffoldBackgroundColor: AppColors.bgDark,
+            fontFamily: 'Inter',
+            cardColor: const Color(0xFF121212),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-      
-      // Define a tela de cadastro como a página inicial
-      home: const CadastroView(),
+
+          theme: ThemeData(
+            brightness: Brightness.light,
+            primaryColor: Colors.red,
+            scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+            fontFamily: 'Inter',
+            cardColor: Colors.white,
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+
+          home: const CadastroView(),
+        );
+      },
     );
   }
 }

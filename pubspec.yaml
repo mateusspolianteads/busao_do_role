@@ -26,6 +26,7 @@ flutter:
   # Configuração de Assets (Imagens, etc)
   assets:
     - assets/img/logo_branca.png
+    - assets/img/logo_preta.png
 
   # Caso queira adicionar a fonte Inter no futuro:
   # fonts:

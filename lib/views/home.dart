@@ -1,0 +1,170 @@
+import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import 'tabs/dashboard_tab.dart';
+import 'tabs/clientes_tab.dart';
+import 'tabs/pedidos_tab.dart';
+import 'tabs/config_tab.dart';
+
+class HomeView extends StatefulWidget {
+  const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  int _selectedIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  late final List<Widget> _pages = [
+    const DashboardTab(),
+    const ClientesTab(),
+    const PedidosTab(),
+    const ConfigTab(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    // Detecta se o tema atual é escuro
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isMobile = constraints.maxWidth < 900;
+
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: isMobile
+              ? AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(LucideIcons.menu, 
+                      color: isDark ? Colors.white : Colors.black),
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                  ),
+                  title: Image.asset(
+                    isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
+                    height: 50,
+                  ),
+                  centerTitle: true,
+                )
+              : null,
+          drawer: isMobile
+              ? Drawer(
+                  child: _buildMenuContent(isMobile: true, isDark: isDark),
+                )
+              : null,
+          body: Row(
+            children: [
+              if (!isMobile)
+                Container(
+                  width: 280,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    border: Border(
+                      right: BorderSide(
+                        color: isDark ? Colors.white10 : Colors.black12
+                      )
+                    ),
+                  ),
+                  child: _buildMenuContent(isMobile: false, isDark: isDark),
+                ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: isDark 
+                      ? const RadialGradient(
+                          center: Alignment(0, -1.2),
+                          radius: 1.2,
+                          colors: [Color(0xFF3a0000), Colors.transparent],
+                          stops: [0.0, 0.6],
+                        )
+                      : null, // Remove o gradiente vermelho no modo claro se preferir
+                  ),
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: _pages,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuContent({required bool isMobile, required bool isDark}) {
+    return Container(
+      color: isMobile ? Theme.of(context).cardColor : Colors.transparent,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Image.asset(
+              isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
+              width: 180,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(LucideIcons.bus, 
+                    color: isDark ? Colors.white : Colors.black, 
+                    size: 40),
+            ),
+          ),
+          _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
+          _buildNavItem("Clientes", LucideIcons.users, 1),
+          _buildNavItem("Pedidos", LucideIcons.shoppingBag, 2),
+          const Spacer(),
+          _buildNavItem("Configurações", LucideIcons.settings, 3),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(String label, IconData icon, int index) {
+    bool isActive = _selectedIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Color(0xFF8B0000), Color(0xFFFF0000)])
+              : null,
+        ),
+        child: ListTile(
+          onTap: () {
+            setState(() => _selectedIndex = index);
+            if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+              Navigator.pop(context);
+            }
+          },
+          leading: Icon(
+            icon,
+            color: isActive 
+                ? Colors.white 
+                : (isDark ? const Color(0xFFA0A0A0) : Colors.black54),
+            size: 20,
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              color: isActive 
+                  ? Colors.white 
+                  : (isDark ? const Color(0xFFA0A0A0) : Colors.black87),
+              fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
