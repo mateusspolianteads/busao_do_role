@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'tabs/dashboard_tab.dart';
+import 'tabs/eventos_tab.dart'; // 1. ADICIONE ESTE IMPORT AQUI
 import 'tabs/clientes_tab.dart';
 import 'tabs/pedidos_tab.dart';
 import 'tabs/config_tab.dart';
@@ -16,20 +17,20 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
 
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  
   late final List<Widget> _pages = [
     const DashboardTab(),
-    const ClientesTab(),
-    const PedidosTab(),
-    const ConfigTab(),
+    const EventosTab(),  
+    const ClientesTab(), 
+    const PedidosTab(),  
+    const ConfigTab(),  
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -37,8 +38,7 @@ class _HomeViewState extends State<HomeView> {
 
         return Scaffold(
           key: _scaffoldKey,
-          backgroundColor:
-              Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
           appBar: isMobile
               ? AppBar(
@@ -47,18 +47,12 @@ class _HomeViewState extends State<HomeView> {
                   leading: IconButton(
                     icon: Icon(
                       LucideIcons.menu,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
-                    onPressed: () => _scaffoldKey
-                        .currentState
-                        ?.openDrawer(),
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
                   title: Image.asset(
-                    isDark
-                        ? 'assets/img/logo_branca.png'
-                        : 'assets/img/logo_preta.png',
+                    isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
                     height: 50,
                   ),
                   centerTitle: true,
@@ -84,9 +78,7 @@ class _HomeViewState extends State<HomeView> {
                     color: Theme.of(context).cardColor,
                     border: Border(
                       right: BorderSide(
-                        color: isDark
-                            ? const Color(0xFF1E1E1E)
-                            : const Color(0xFFE5E5E5),
+                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E5E5),
                       ),
                     ),
                   ),
@@ -99,7 +91,6 @@ class _HomeViewState extends State<HomeView> {
               Expanded(
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 400),
-
                   decoration: BoxDecoration(
                     gradient: isDark
                         ? const RadialGradient(
@@ -113,14 +104,10 @@ class _HomeViewState extends State<HomeView> {
                           )
                         : null,
                   ),
-
                   child: AnimatedSwitcher(
-                    duration:
-                        const Duration(milliseconds: 350),
-
+                    duration: const Duration(milliseconds: 350),
                     switchInCurve: Curves.easeOut,
                     switchOutCurve: Curves.easeIn,
-
                     child: KeyedSubtree(
                       key: ValueKey(_selectedIndex),
                       child: _pages[_selectedIndex],
@@ -140,48 +127,25 @@ class _HomeViewState extends State<HomeView> {
     required bool isDark,
   }) {
     return Container(
-      color: isMobile
-          ? Theme.of(context).cardColor
-          : Colors.transparent,
-
+      color: isMobile ? Theme.of(context).cardColor : Colors.transparent,
       child: Column(
         children: [
           Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 40),
+            padding: const EdgeInsets.symmetric(vertical: 40),
             child: Image.asset(
-              isDark
-                  ? 'assets/img/logo_branca.png'
-                  : 'assets/img/logo_preta.png',
+              isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
               width: 180,
             ),
           ),
 
-          _buildNavItem(
-            "Dashboard",
-            LucideIcons.layoutDashboard,
-            0,
-          ),
-
-          _buildNavItem(
-            "Clientes",
-            LucideIcons.users,
-            1,
-          ),
-
-          _buildNavItem(
-            "Pedidos",
-            LucideIcons.shoppingBag,
-            2,
-          ),
+          _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
+          _buildNavItem("Eventos", LucideIcons.ticket, 1),
+          _buildNavItem("Clientes", LucideIcons.users, 2),
+          _buildNavItem("Pedidos", LucideIcons.shoppingBag, 3),
 
           const Spacer(),
 
-          _buildNavItem(
-            "Configurações",
-            LucideIcons.settings,
-            3,
-          ),
+          _buildNavItem("Configurações", LucideIcons.settings, 4),
 
           const SizedBox(height: 20),
         ],
@@ -189,65 +153,36 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildNavItem(
-    String label,
-    IconData icon,
-    int index,
-  ) {
+  Widget _buildNavItem(String label, IconData icon, int index) {
     bool isActive = _selectedIndex == index;
-
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 5,
-      ),
-
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-
-          color: isActive
-              ? const Color(0xFFB30000)
-              : Colors.transparent,
+          color: isActive ? const Color(0xFFB30000) : Colors.transparent,
         ),
-
         child: ListTile(
           onTap: () {
             setState(() {
               _selectedIndex = index;
             });
-
-            if (_scaffoldKey
-                    .currentState?.isDrawerOpen ??
-                false) {
+            if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
               Navigator.pop(context);
             }
           },
-
           leading: Icon(
             icon,
-            color: isActive
-                ? Colors.white
-                : (isDark
-                    ? const Color(0xFFA0A0A0)
-                    : Colors.black54),
+            color: isActive ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : Colors.black54),
             size: 20,
           ),
-
           title: Text(
             label,
             style: TextStyle(
-              color: isActive
-                  ? Colors.white
-                  : (isDark
-                      ? const Color(0xFFA0A0A0)
-                      : Colors.black87),
-
+              color: isActive ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : Colors.black87),
               fontWeight: FontWeight.w600,
               fontSize: 15,
             ),
