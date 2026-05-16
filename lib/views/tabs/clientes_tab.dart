@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -90,6 +92,51 @@ class _ClientesTabState extends State<ClientesTab> {
 
     fetchClientes();
   }
+
+  Future<void> importarPlanilha() async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xlsx', 'xls'],
+    );
+
+    if (result == null) return;
+
+    final file = result.files.first;
+
+    FormData formData = FormData.fromMap({
+      "file": MultipartFile.fromBytes(
+        file.bytes!,
+        filename: file.name,
+      ),
+    });
+
+    final response = await Dio().post(
+      "http://127.0.0.1:8000/clientes/importar-planilha",
+      data: formData,
+    );
+
+    if (response.statusCode == 201) {
+      fetchClientes();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Planilha importada com sucesso"),
+        ),
+      );
+    }
+  } catch (e) {
+    print(e);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Erro ao importar planilha"),
+      ),
+    );
+  }
+}
 
   void _mostrarDetalhesCliente(Map cliente) {
     showDialog(
@@ -477,7 +524,7 @@ class _ClientesTabState extends State<ClientesTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ElevatedButton.icon(
-      onPressed: () {},
+      onPressed: importarPlanilha,
       icon: Icon(
         LucideIcons.fileSpreadsheet,
         size: 18,
