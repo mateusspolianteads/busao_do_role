@@ -221,6 +221,10 @@ class _EventosTabState extends State<EventosTab> {
       );
 
       if (response.statusCode == 201) {
+        setState(() {
+          paginaAtual = 1;
+        });
+
         await _fetchClientesDoEvento(eventoSelecionado!['id']);
 
         if (!mounted) return;
