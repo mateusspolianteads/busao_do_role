@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -36,6 +37,8 @@ class _EventosTabState extends State<EventosTab> {
     return (totalClientes / clientesPorPagina).ceil();
   }
 
+  String search = "";
+  Timer? _debounce;
   int? categoriaSelecionada;
 
   final _formKey = GlobalKey<FormState>();
@@ -297,7 +300,10 @@ class _EventosTabState extends State<EventosTab> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://127.0.0.1:8000/clientes/evento/$eventoId?pagina=$paginaAtual&limite=$clientesPorPagina",
+          "http://127.0.0.1:8000/clientes/evento/$eventoId"
+          "?pagina=$paginaAtual"
+          "&limite=$clientesPorPagina"
+          "&search=$search",
         ),
       );
 
@@ -839,6 +845,31 @@ class _EventosTabState extends State<EventosTab> {
             label: const Text("Importar Planilha"),
           ),
           const SizedBox(height: 30),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: "Buscar cliente",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+                _debounce = Timer(const Duration(milliseconds: 400), () {
+                  setState(() {
+                    search = value;
+                    paginaAtual = 1;
+                  });
+
+                  _fetchClientesDoEvento(eventoSelecionado!['id']);
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 15),
           Expanded(
             child: carregandoClientes
                 ? Center(
