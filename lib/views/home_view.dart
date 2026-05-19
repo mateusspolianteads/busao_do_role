@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'tabs/dashboard_tab.dart';
-import 'tabs/eventos_tab.dart'; // 1. ADICIONE ESTE IMPORT AQUI
-import 'tabs/clientes_tab.dart';
+import 'tabs/eventos_tab.dart';
 import 'tabs/pedidos_tab.dart';
 import 'tabs/config_tab.dart';
 
@@ -22,8 +21,7 @@ class _HomeViewState extends State<HomeView> {
   
   late final List<Widget> _pages = [
     const DashboardTab(),
-    const EventosTab(),  
-    const ClientesTab(), 
+    const EventosTab(),   
     const PedidosTab(),  
     const ConfigTab(),  
   ];
@@ -140,7 +138,6 @@ class _HomeViewState extends State<HomeView> {
 
           _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
           _buildNavItem("Eventos", LucideIcons.ticket, 1),
-          _buildNavItem("Clientes", LucideIcons.users, 2),
           _buildNavItem("Pedidos", LucideIcons.shoppingBag, 3),
 
           const Spacer(),

@@ -1,4 +1,4 @@
-import 'dart:convert';
+/*import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +109,8 @@ class _ClientesTabState extends State<ClientesTab> {
         file.bytes!,
         filename: file.name,
       ),
+
+      "evento_id": eventoSelecionado!['id'],
     });
 
     final response = await Dio().post(
@@ -883,4 +885,4 @@ class CampoClienteCard extends StatelessWidget {
       ),
     );
   }
-}
+}*/
