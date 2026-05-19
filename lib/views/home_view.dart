@@ -138,11 +138,11 @@ class _HomeViewState extends State<HomeView> {
 
           _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
           _buildNavItem("Eventos", LucideIcons.ticket, 1),
-          _buildNavItem("Pedidos", LucideIcons.shoppingBag, 3),
+          _buildNavItem("Pedidos", LucideIcons.shoppingBag, 2),
 
           const Spacer(),
 
-          _buildNavItem("Configurações", LucideIcons.settings, 4),
+          _buildNavItem("Configurações", LucideIcons.settings, 3),
 
           const SizedBox(height: 20),
         ],

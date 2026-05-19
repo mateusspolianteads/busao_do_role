@@ -522,7 +522,65 @@ class _EventosTabState extends State<EventosTab> {
                     IconButton(
                       icon: const Icon(LucideIcons.trash2,
                           size: 16, color: Colors.red),
-                      onPressed: () => _deletarEvento(evento['id']),
+                      onPressed: () async {
+                        final confirmar = await showDialog(
+                          context: context,
+                          builder: (context) {
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+
+                            return AlertDialog(
+                              backgroundColor: Theme.of(context).cardColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              title: const Text(
+                                "Excluir evento?",
+                              ),
+                              content: Text(
+                                "Tem certeza que deseja excluir este evento? Essa ação não pode ser desfeita.",
+                                style: TextStyle(
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, false);
+                                  },
+                                  child: Text(
+                                    "Cancelar",
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context, true);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  child: const Text(
+                                    "Excluir",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmar == true) {
+                          _deletarEvento(evento['id']);
+                        }
+                      },
                     ),
                   ],
                 )
