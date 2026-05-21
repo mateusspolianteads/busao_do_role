@@ -1,26 +1,174 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-class PedidosTab extends StatelessWidget {
+// --- 1. MODELOS DE DADOS --- //
+class PedidoModel {
+  final int id;
+  final String clienteNome;
+  final String dataVenda;
+  final double valorLote;
+  final String statusPedido;
+
+  PedidoModel({
+    required this.id,
+    required this.clienteNome,
+    required this.dataVenda,
+    required this.valorLote,
+    required this.statusPedido,
+  });
+
+  factory PedidoModel.fromJson(Map<String, dynamic> json) {
+    return PedidoModel(
+      id: json['id'] ?? 0,
+      clienteNome: json['cliente_nome'] ?? 'Cliente Desconhecido',
+      dataVenda: json['data_venda'] ?? '',
+      valorLote: (json['valor_lote'] ?? 0.0).toDouble(),
+      statusPedido: json['status_pedido'] ?? 'Indefinido',
+    );
+  }
+}
+
+class EventoModel {
+  final int id;
+  final String nome;
+
+  EventoModel({required this.id, required this.nome});
+
+  factory EventoModel.fromJson(Map<String, dynamic> json) {
+    return EventoModel(
+      id: json['id'] ?? 0,
+      nome: json['nome'] ?? 'Evento sem nome',
+    );
+  }
+}
+
+// --- 2. TELA PRINCIPAL --- //
+class PedidosTab extends StatefulWidget {
   const PedidosTab({super.key});
+
+  @override
+  State<PedidosTab> createState() => _PedidosTabState();
+}
+
+class _PedidosTabState extends State<PedidosTab> {
+  // Variáveis de Eventos
+  List<EventoModel> _eventos = [];
+  int? _eventoSelecionadoId; // Começa Nulo para mostrar o "Selecione"
+  bool _isLoadingEventos = true;
+
+  // Variáveis de Pedidos
+  List<PedidoModel> _pedidos = [];
+  bool _isLoadingPedidos = false;      
+  bool _hasErrorPedidos = false;
+
+  // Variáveis de Paginação
+  int _paginaAtual = 1;
+  final int _limit = 10; 
+  bool _hasMore = true;  
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEventos(); 
+  }
+
+  // --- BUSCAR EVENTOS ---
+  Future<void> _fetchEventos() async {
+    try {
+      final url = Uri.parse('http://127.0.0.1:8000/eventos/listar');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+        List<EventoModel> eventosCarregados = jsonResponse.map((data) => EventoModel.fromJson(data)).toList();
+
+        setState(() {
+          _eventos = eventosCarregados;
+          _isLoadingEventos = false;
+          // Deixamos de selecionar o primeiro automaticamente para a caixa mostrar "Selecione"
+        });
+      } else {
+        throw Exception('Falha ao carregar eventos');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingEventos = false;
+      });
+    }
+  }
+
+  // --- BUSCAR PEDIDOS ---
+  Future<void> _fetchPedidos() async {
+    if (_eventoSelecionadoId == null) return;
+
+    setState(() {
+      _isLoadingPedidos = true;
+      _hasErrorPedidos = false;
+    });
+
+    int skip = (_paginaAtual - 1) * _limit;
+
+    try {
+      final url = Uri.parse('http://127.0.0.1:8000/pedidos/evento/$_eventoSelecionadoId?skip=$skip&limit=$_limit');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+        List<PedidoModel> novosPedidos = jsonResponse.map((data) => PedidoModel.fromJson(data)).toList();
+
+        setState(() {
+          _pedidos = novosPedidos; 
+          _hasMore = novosPedidos.length == _limit;
+          _isLoadingPedidos = false;
+        });
+      } else {
+        throw Exception('Falha na API');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingPedidos = false;
+        _hasErrorPedidos = true;
+      });
+    }
+  }
+
+  // --- MUDAR EVENTO PELO DROPDOWN ---
+  void _mudarEvento(int eventoId) {
+    if (_eventoSelecionadoId == eventoId) return; 
+
+    setState(() {
+      _eventoSelecionadoId = eventoId;
+      _paginaAtual = 1; 
+      _pedidos.clear(); 
+    });
+    
+    _fetchPedidos();
+  }
+
+  // --- CONTROLES DE PÁGINA ---
+  void _proximaPagina() {
+    if (_hasMore && !_isLoadingPedidos) {
+      setState(() => _paginaAtual++);
+      _fetchPedidos();
+    }
+  }
+
+  void _paginaAnterior() {
+    if (_paginaAtual > 1 && !_isLoadingPedidos) {
+      setState(() => _paginaAtual--);
+      _fetchPedidos();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.1);
-
-    // Dados fictícios
-    const mockPedidos = [
-      {"id": "#1042", "cliente": "Ana Silva", "data": "14 Mai 2026", "valor": "R\$ 120,00", "status": "Aprovado"},
-      {"id": "#1043", "cliente": "Carlos Eduardo", "data": "14 Mai 2026", "valor": "R\$ 45,00", "status": "Pendente"},
-      {"id": "#1044", "cliente": "Mariana Souza", "data": "13 Mai 2026", "valor": "R\$ 210,00", "status": "Cancelado"},
-      {"id": "#1045", "cliente": "Roberto Carlos", "data": "12 Mai 2026", "valor": "R\$ 80,00", "status": "Aprovado"},
-      {"id": "#1046", "cliente": "Julia Mendes", "data": "11 Mai 2026", "valor": "R\$ 350,00", "status": "Aprovado"},
-    ];
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
 
     return Padding(
       padding: const EdgeInsets.all(40),
@@ -30,10 +178,52 @@ class PedidosTab extends StatelessWidget {
           Text("Pedidos",
               style: TextStyle(
                   fontSize: 32, fontWeight: FontWeight.w800, color: textColor)),
-          Text("Gerenciamento de vendas e ingressos",
+          Text("Filtre os pedidos por evento",
               style: TextStyle(color: subtitleColor)),
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
 
+          // 👇 CAIXA DE SELEÇÃO (DROPDOWN) 👇
+          _isLoadingEventos
+              ? const SizedBox(height: 50, child: Align(alignment: Alignment.centerLeft, child: CircularProgressIndicator()))
+              : _eventos.isEmpty
+                  ? const Text("Nenhum evento encontrado.", style: TextStyle(color: Colors.red))
+                  : Container(
+                      width: 350, // Define a largura máxima da caixa
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _eventoSelecionadoId,
+                          hint: Text("Selecione um evento", style: TextStyle(color: subtitleColor)),
+                          icon: Icon(LucideIcons.chevronDown, color: subtitleColor, size: 20),
+                          dropdownColor: Theme.of(context).cardColor,
+                          isExpanded: true,
+                          style: TextStyle(color: textColor, fontSize: 16),
+                          items: _eventos.map((evento) {
+                            return DropdownMenuItem<int>(
+                              value: evento.id,
+                              child: Text(
+                                evento.nome,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (novoValor) {
+                            if (novoValor != null) {
+                              _mudarEvento(novoValor);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+
+          const SizedBox(height: 24),
+
+          // --- ÁREA DA TABELA DE PEDIDOS ---
           Expanded(
             child: Container(
               width: double.infinity,
@@ -42,30 +232,118 @@ class PedidosTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: borderColor),
               ),
-              child: mockPedidos.isEmpty
-                  ? EmptyState(isDark: isDark) // Extraído para Widget (melhor performance)
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(24),
-                      itemCount: mockPedidos.length,
-                      separatorBuilder: (context, index) => Divider(color: borderColor, height: 32),
-                      itemBuilder: (context, index) {
-                        return PedidoListItem(
-                          pedido: mockPedidos[index],
-                          textColor: textColor,
-                          subtitleColor: subtitleColor,
-                          isDark: isDark,
-                        );
-                      },
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _buildContent(isDark, textColor, subtitleColor, borderColor),
+                  ),
+
+                  // --- BARRA DE PAGINAÇÃO ---
+                  Divider(color: borderColor, height: 1),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                          onPressed: (_paginaAtual > 1 && !_isLoadingPedidos && _eventoSelecionadoId != null) ? _paginaAnterior : null,
+                          color: textColor,
+                          disabledColor: textColor.withOpacity(0.2),
+                        ),
+                        Text(
+                          "Página $_paginaAtual",
+                          style: TextStyle(
+                            color: textColor, 
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward_ios, size: 18),
+                          onPressed: (_hasMore && !_isLoadingPedidos && _eventoSelecionadoId != null) ? _proximaPagina : null,
+                          color: textColor,
+                          disabledColor: textColor.withOpacity(0.2),
+                        ),
+                      ],
                     ),
+                  ),
+                ],
+              ),
             ),
           )
         ],
       ),
     );
   }
+
+  Widget _buildContent(bool isDark, Color textColor, Color subtitleColor, Color borderColor) {
+    // 1. Caso o usuário ainda não tenha selecionado nenhum evento na caixa
+    if (_eventoSelecionadoId == null) {
+      return InitialState(isDark: isDark);
+    }
+
+    if (_hasErrorPedidos) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Erro ao carregar os pedidos.', style: TextStyle(color: Colors.red)),
+            TextButton(onPressed: _fetchPedidos, child: const Text('Tentar novamente'))
+          ],
+        ),
+      );
+    }
+
+    if (_isLoadingPedidos) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_pedidos.isEmpty) {
+      return EmptyState(isDark: isDark);
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(24),
+      itemCount: _pedidos.length,
+      separatorBuilder: (context, index) => Divider(color: borderColor, height: 32),
+      itemBuilder: (context, index) {
+        return PedidoListItem(
+          pedido: _pedidos[index],
+          textColor: textColor,
+          subtitleColor: subtitleColor,
+          isDark: isDark,
+        );
+      },
+    );
+  }
 }
 
-// --- WIDGETS EXTRAÍDOS PARA MELHORAR PERFORMANCE (Evita reconstruir a tela toda) --- //
+// --- 3. WIDGETS AUXILIARES --- //
+
+// Nova tela de aviso amigável quando nenhum evento foi selecionado ainda
+class InitialState extends StatelessWidget {
+  final bool isDark;
+  const InitialState({super.key, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = isDark ? Colors.white10 : Colors.black12;
+    final emptyTextColor = isDark ? Colors.white54 : Colors.black54;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(LucideIcons.mousePointerClick, size: 60, color: iconColor),
+          const SizedBox(height: 16),
+          Text("Selecione um evento acima para carregar os pedidos",
+              style: TextStyle(color: emptyTextColor, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+}
 
 class EmptyState extends StatelessWidget {
   final bool isDark;
@@ -82,7 +360,8 @@ class EmptyState extends StatelessWidget {
         children: [
           Icon(LucideIcons.shoppingCart, size: 60, color: iconColor),
           const SizedBox(height: 10),
-          Text("Nenhum pedido recente", style: TextStyle(color: emptyTextColor)),
+          Text("Nenhum pedido para este evento",
+              style: TextStyle(color: emptyTextColor)),
         ],
       ),
     );
@@ -90,7 +369,7 @@ class EmptyState extends StatelessWidget {
 }
 
 class PedidoListItem extends StatelessWidget {
-  final Map<String, String> pedido;
+  final PedidoModel pedido;
   final Color textColor;
   final Color subtitleColor;
   final bool isDark;
@@ -103,17 +382,32 @@ class PedidoListItem extends StatelessWidget {
     required this.isDark,
   });
 
+  String formatarData(String dataIso) {
+    if (dataIso.isEmpty) return "Data não informada";
+    try {
+      final dateTime = DateTime.parse(dataIso);
+      return DateFormat('dd MMM yyyy', 'pt_BR').format(dateTime);
+    } catch (e) {
+      return dataIso;
+    }
+  }
+
+  String formatarMoeda(double valor) {
+    final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    return formatador.format(valor);
+  }
+
   @override
   Widget build(BuildContext context) {
     Color statusColor;
-    switch (pedido["status"]) {
-      case "Aprovado":
+    switch (pedido.statusPedido.toLowerCase()) {
+      case "aprovado":
         statusColor = Colors.green;
         break;
-      case "Pendente":
+      case "pendente":
         statusColor = Colors.orange;
         break;
-      case "Cancelado":
+      case "cancelado":
         statusColor = Colors.red;
         break;
       default:
@@ -121,41 +415,53 @@ class PedidoListItem extends StatelessWidget {
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(LucideIcons.receipt, color: textColor, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  pedido["cliente"]!,
-                  style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "${pedido["id"]} • ${pedido["data"]}",
-                  style: TextStyle(color: subtitleColor, fontSize: 13),
-                ),
-              ],
-            ),
-          ],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(LucideIcons.receipt, color: textColor, size: 24),
         ),
+        
+        const SizedBox(width: 16),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                pedido.clienteNome,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                    fontSize: 16),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "#${pedido.id} • ${formatarData(pedido.dataVenda)}",
+                style: TextStyle(color: subtitleColor, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              pedido["valor"]!,
-              style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 16),
+              formatarMoeda(pedido.valorLote),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: textColor, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Container(
@@ -166,8 +472,11 @@ class PedidoListItem extends StatelessWidget {
                 border: Border.all(color: statusColor.withOpacity(0.3)),
               ),
               child: Text(
-                pedido["status"]!,
-                style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                pedido.statusPedido,
+                style: TextStyle(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ],
