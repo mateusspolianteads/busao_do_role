@@ -54,7 +54,6 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
         );
         emailController.clear();
         
-        // Opcional: Voltar para a tela de login automaticamente após alguns segundos
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) Navigator.pop(context);
         });

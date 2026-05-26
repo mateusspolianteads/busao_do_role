@@ -66,6 +66,18 @@ class _ConfigTabState extends State<ConfigTab> {
               });
             },
           ),
+
+          const SizedBox(height: 20),
+
+          // --- IMPLEMENTADO: CARD DE LOGOUT COPIANDO O FRONTEND WEB ---
+          LogoutCard(
+            onLogoutPressed: () {
+              // TODO: Insira aqui a sua lógica de logout do Firebase, Token, etc.
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Sessão encerrada com segurança!')),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -143,6 +155,90 @@ class ConfigItemCard extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeThumbColor: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- NOVO WIDGET: CARD EXCLUSIVO DE LOGOUT COM O BOTÃO DESGRUDADO --- //
+
+class LogoutCard extends StatelessWidget {
+  final VoidCallback onLogoutPressed;
+
+  const LogoutCard({super.key, required this.onLogoutPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
+    
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.1);
+
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start, // Mantém alinhado no topo
+        children: [
+          const Icon(
+            LucideIcons.logOut, // Ícone de Sair combinando com a proposta
+            color: Colors.red,
+            size: 28,
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Sair do Sistema",
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Encerrar sua sessão de administrador com segurança",
+                  style: TextStyle(
+                    color: subtitleColor,
+                  ),
+                ),
+                
+                // === O SEU AJUSTE CSS AQUI NO FLUTTER ===
+                // O SizedBox cria exatamente o mesmo efeito de desgrudar/afastar o botão
+                const SizedBox(height: 18), 
+                
+                // Botão customizado igual ao do Frontend web
+                OutlinedButton.icon(
+                  onPressed: onLogoutPressed,
+                  icon: const Icon(LucideIcons.logOut, size: 16, color: Color(0xFFFF4D4D)),
+                  label: const Text(
+                    "Sair da Conta",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF4D4D),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: const Color(0xFFFF4D4D).withOpacity(0.2)),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
