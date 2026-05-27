@@ -8012,7 +8012,7 @@ tE(a,b){return A.aO3(a,b)},
 aO3(a,b){var s=0,r=A.H(t.Tm),q,p=2,o=[],n,m,l,k,j,i,h,g
 var $async$tE=A.I(function(c,d){if(c===1){o.push(d)
 s=p}for(;;)switch(s){case 0:p=4
-k=A.eX("http://127.0.0.1:8000/login/")
+k=A.eX("https://busao-api.onrender.com/login/")
 j=t.N
 i=A.ao(["Content-Type","application/json"],j,j)
 s=7
@@ -8090,7 +8090,7 @@ case 3:k=b
 j=A.cv(k.a.h(0,"refresh_token"))
 if(j==null){q=null
 s=1
-break}p=A.eX("http://127.0.0.1:8000/usuarios/refresh")
+break}p=A.eX("https://busao-api.onrender.com/usuarios/refresh")
 o=t.N
 n=A.ao(["Content-Type","application/json"],o,o)
 s=4
@@ -44837,7 +44837,7 @@ $S:610}
 A.a13.prototype={
 a1_(a){var s=0,r=A.H(t.Wd),q,p=this,o,n
 var $async$$1=A.I(function(b,c){if(b===1)return A.E(c,r)
-for(;;)switch(s){case 0:o=A.eX("http://127.0.0.1:8000"+p.a)
+for(;;)switch(s){case 0:o=A.eX("https://busao-api.onrender.com"+p.a)
 n=t.N
 n=A.t(n,n)
 n.m(0,"Content-Type","application/json")
@@ -44899,7 +44899,7 @@ if(f.a.a!==m.w.a.a){m.c.a8(t.J).f.eP(B.Tt)
 s=1
 break}m.a5(new A.anj(m))
 p=4
-l=A.eX("http://127.0.0.1:8000/usuarios/cadastrar")
+l=A.eX("https://busao-api.onrender.com/usuarios/cadastrar")
 i=t.N
 h=A.ao(["Content-Type","application/json"],i,i)
 s=7
@@ -44983,7 +44983,7 @@ if(J.ca(d)===0){m.c.a8(t.J).f.eP(B.To)
 s=1
 break}m.a5(new A.ap8(m))
 p=4
-l=A.eX("http://127.0.0.1:8000/usuarios/esqueci-senha")
+l=A.eX("https://busao-api.onrender.com/usuarios/esqueci-senha")
 i=t.N
 h=A.ao(["Content-Type","application/json"],i,i)
 s=7
@@ -101623,7 +101623,7 @@ s($,"b_9","aCo",()=>new A.a1H())
 r($,"b3K","bq",()=>$.aCo())
 r($,"b3g","az2",()=>{A.aTz()
 return B.DC})
-s($,"b_w","aCt",()=>{var q=A.aO5("http://127.0.0.1:8000",A.ao(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aJN(),o=new A.Ne(A.b([B.DQ],A.av("y<fZ?>")))
+s($,"b_w","aCt",()=>{var q=A.aO5("https://busao-api.onrender.com",A.ao(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aJN(),o=new A.Ne(A.b([B.DQ],A.av("y<fZ?>")))
 o.V(o,B.Lc)
 o=new A.a4_(p,o,A.aJN(),new A.a7x(51200),!1)
 o.Yc$=q
