@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../theme_controller.dart'; // Certifique-se que o caminho está correto
+import '../../theme_controller.dart';
+import '../../services/auth_service.dart';
+import '../login_view.dart';
 
 class ConfigTab extends StatefulWidget {
   const ConfigTab({super.key});
@@ -10,14 +12,12 @@ class ConfigTab extends StatefulWidget {
 }
 
 class _ConfigTabState extends State<ConfigTab> {
-  // Notificações é um estado local, então mantemos aqui
   bool notificacoes = true;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
-    // CORRIGIDO: Adicionado o "!" para não ser nulo
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
 
     return Padding(
@@ -30,7 +30,7 @@ class _ConfigTabState extends State<ConfigTab> {
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w800,
-              color: textColor, // Padronizado com as outras abas
+              color: textColor,
             ),
           ),
           const SizedBox(height: 5),
@@ -41,8 +41,6 @@ class _ConfigTabState extends State<ConfigTab> {
             ),
           ),
           const SizedBox(height: 40),
-
-          // Chamando o Widget extraído em vez do método
           ConfigItemCard(
             title: "Tema do Sistema",
             subtitle: "Trocar entre modo claro e escuro",
@@ -52,9 +50,7 @@ class _ConfigTabState extends State<ConfigTab> {
               ThemeController.toggleTheme(v);
             },
           ),
-
           const SizedBox(height: 20),
-
           ConfigItemCard(
             title: "Notificações",
             subtitle: "Gerenciar avisos de novas vendas",
@@ -66,16 +62,37 @@ class _ConfigTabState extends State<ConfigTab> {
               });
             },
           ),
-
           const SizedBox(height: 20),
-
-          // --- IMPLEMENTADO: CARD DE LOGOUT COPIANDO O FRONTEND WEB ---
           LogoutCard(
-            onLogoutPressed: () {
-              // TODO: Insira aqui a sua lógica de logout do Firebase, Token, etc.
+            onLogoutPressed: () async {
+              print("====== INICIANDO LOGOUT ======");
+
+              // 1. Limpa os tokens
+              await AuthService.logout();
+              print("1. Tokens removidos do SharedPreferences");
+
+              if (!context.mounted) {
+                print("Erro: Contexto não está mais montado");
+                return;
+              }
+
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Sessão encerrada com segurança!')),
+                const SnackBar(
+                  content: Text('Sessão encerrada com segurança!'),
+                  backgroundColor: Colors.blueGrey,
+                ),
               );
+
+              print(
+                  "2. Redirecionando para a LoginView usando rootNavigator...");
+
+              // O 'rootNavigator: true' obriga o Flutter a fechar as Abas e resetar o app todo
+              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginView()),
+                (route) => false,
+              );
+
+              print("====== LOGOUT CONCLUÍDO ======");
             },
           ),
         ],
@@ -83,8 +100,6 @@ class _ConfigTabState extends State<ConfigTab> {
     );
   }
 }
-
-// --- WIDGET EXTRAÍDO PARA ISOLAR O ESTADO E MELHORAR PERFORMANCE --- //
 
 class ConfigItemCard extends StatelessWidget {
   final String title;
@@ -107,11 +122,9 @@ class ConfigItemCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
-    
-    // CORRIGIDO: Agora a borda se adapta ao tema claro e escuro corretamente
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.1);
+
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -126,7 +139,7 @@ class ConfigItemCard extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: Colors.red, // Mantendo o padrão visual vermelho do app
+            color: Colors.red,
             size: 28,
           ),
           const SizedBox(width: 20),
@@ -162,8 +175,6 @@ class ConfigItemCard extends StatelessWidget {
   }
 }
 
-// --- NOVO WIDGET: CARD EXCLUSIVO DE LOGOUT COM O BOTÃO DESGRUDADO --- //
-
 class LogoutCard extends StatelessWidget {
   final VoidCallback onLogoutPressed;
 
@@ -174,10 +185,9 @@ class LogoutCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[500]!;
-    
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.1);
+
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
 
     return Container(
       padding: const EdgeInsets.all(25),
@@ -187,10 +197,10 @@ class LogoutCard extends StatelessWidget {
         border: Border.all(color: borderColor),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // Mantém alinhado no topo
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            LucideIcons.logOut, // Ícone de Sair combinando com a proposta
+            LucideIcons.logOut,
             color: Colors.red,
             size: 28,
           ),
@@ -213,15 +223,11 @@ class LogoutCard extends StatelessWidget {
                     color: subtitleColor,
                   ),
                 ),
-                
-                // === O SEU AJUSTE CSS AQUI NO FLUTTER ===
-                // O SizedBox cria exatamente o mesmo efeito de desgrudar/afastar o botão
-                const SizedBox(height: 18), 
-                
-                // Botão customizado igual ao do Frontend web
+                const SizedBox(height: 18),
                 OutlinedButton.icon(
                   onPressed: onLogoutPressed,
-                  icon: const Icon(LucideIcons.logOut, size: 16, color: Color(0xFFFF4D4D)),
+                  icon: const Icon(LucideIcons.logOut,
+                      size: 16, color: Color(0xFFFF4D4D)),
                   label: const Text(
                     "Sair da Conta",
                     style: TextStyle(
@@ -230,8 +236,10 @@ class LogoutCard extends StatelessWidget {
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: const Color(0xFFFF4D4D).withOpacity(0.2)),
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    side: BorderSide(
+                        color: const Color(0xFFFF4D4D).withOpacity(0.2)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 22, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
