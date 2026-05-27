@@ -1,9 +1,14 @@
+import 'package:busao_do_role/services/dio_client.dart';
+import 'package:busao_do_role/views/splash_view.dart';
 import 'package:flutter/material.dart';
-import 'views/cadastro_view.dart';
 import 'core/app_colors.dart';
 import 'theme_controller.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await DioClient.init();
+
   runApp(const BusaoDoRoleApp());
 }
 
@@ -76,7 +81,7 @@ class BusaoDoRoleApp extends StatelessWidget {
             ),
           ),
 
-          home: const CadastroView(),
+          home: const SplashView(),
         );
       },
     );

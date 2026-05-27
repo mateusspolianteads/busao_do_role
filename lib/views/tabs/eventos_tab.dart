@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:busao_do_role/services/api_client.dart';
+import 'package:busao_do_role/services/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:http/http.dart' as http;
@@ -48,7 +50,7 @@ class _EventosTabState extends State<EventosTab> {
   final TextEditingController _localController = TextEditingController();
   final TextEditingController _valorController = TextEditingController();
 
-  final String apiUrl = "http://127.0.0.1:8000/eventos";
+  final String apiUrl = "/eventos";
 
   @override
   void initState() {
@@ -85,17 +87,39 @@ class _EventosTabState extends State<EventosTab> {
     setState(() => isLoading = true);
 
     try {
-      final response = await http.get(Uri.parse("$apiUrl/listar"));
+      debugPrint("INICIO FETCH");
 
-      if (response.statusCode == 200) {
-        setState(() {
-          eventos = jsonDecode(response.body);
-        });
-      } else {
+      final response = await ApiClient.request("$apiUrl/listar");
+
+      debugPrint("STATUS: ${response.statusCode}");
+
+      debugPrint("BODY:");
+      debugPrint(response.body);
+
+      final dados = jsonDecode(response.body);
+
+      debugPrint("TIPO:");
+      debugPrint(dados.runtimeType.toString());
+
+      setState(() {
+        if (dados is List) {
+          eventos = dados;
+        } else if (dados['eventos'] != null) {
+          eventos = dados['eventos'];
+        } else {
+          eventos = [];
+        }
+      });
+    } catch (e, s) {
+      debugPrint("ERRO:");
+      debugPrint(e.toString());
+
+      debugPrint("STACK:");
+      debugPrint(s.toString());
+
+      setState(() {
         eventos = [];
-      }
-    } catch (_) {
-      eventos = [];
+      });
     }
 
     setState(() => isLoading = false);
@@ -103,9 +127,7 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _fetchCategorias() async {
     try {
-      final response = await http.get(
-        Uri.parse("http://127.0.0.1:8000/categorias/listar"),
-      );
+      final response = await ApiClient.request("/categorias/listar");
 
       if (response.statusCode == 200) {
         setState(() {
@@ -117,11 +139,13 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _salvarEvento() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (categoriaSelecionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("Selecione uma categoria!"),
-            backgroundColor: Colors.red),
+          content: Text("Selecione uma categoria!"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -142,26 +166,28 @@ class _EventosTabState extends State<EventosTab> {
       http.Response response;
 
       if (eventoSelecionado == null) {
-        response = await http.post(
-          Uri.parse("$apiUrl/cadastrar"),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(mapDados),
+        response = await ApiClient.request(
+          "/eventos/cadastrar",
+          method: "POST",
+          body: mapDados,
         );
       } else {
-        response = await http.put(
-          Uri.parse("$apiUrl/atualizar/${eventoSelecionado!['id']}"),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(mapDados),
+        response = await ApiClient.request(
+          "/eventos/atualizar/${eventoSelecionado!['id']}",
+          method: "PUT",
+          body: mapDados,
         );
       }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _voltarParaEventos();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Evento salvo com sucesso!'),
-                backgroundColor: Colors.green),
+              content: Text('Evento salvo com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } else {
@@ -170,7 +196,10 @@ class _EventosTabState extends State<EventosTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Erro: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -180,20 +209,28 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _deletarEvento(dynamic id) async {
     try {
-      await http.delete(Uri.parse("$apiUrl/deletar/$id"));
+      await ApiClient.request(
+        "/eventos/deletar/$id",
+        method: "DELETE",
+      );
+
       _fetchEventos();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Evento deletado!'), backgroundColor: Colors.red),
+            content: Text('Evento deletado!'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao deletar: $e'),
-              backgroundColor: Colors.red),
+            content: Text('Erro ao deletar: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -218,8 +255,8 @@ class _EventosTabState extends State<EventosTab> {
         "evento_id": eventoSelecionado!['id'],
       });
 
-      final response = await Dio().post(
-        "http://127.0.0.1:8000/clientes/importar-planilha",
+      final response = await DioClient.dio.post(
+        "/pedidos/importar-planilha",
         data: formData,
       );
 
@@ -256,20 +293,20 @@ class _EventosTabState extends State<EventosTab> {
     String cpf,
     String telefone,
   ) async {
-    await http.put(
-      Uri.parse("http://127.0.0.1:8000/clientes/atualizar/$id"),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
+    await ApiClient.request(
+      "/clientes/atualizar/$id",
+      method: "PUT",
+      body: {
         'nome': nome,
         'email': email,
         'cpf': cpf,
         'telefone': telefone,
-      }),
+      },
     );
 
-    await _fetchClientesDoEvento(eventoSelecionado!['id']);
+    await _fetchClientesDoEvento(
+      eventoSelecionado!['id'],
+    );
   }
 
   void _mostrarDetalhesCliente(Map cliente) {
@@ -298,13 +335,11 @@ class _EventosTabState extends State<EventosTab> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          "http://127.0.0.1:8000/clientes/evento/$eventoId"
-          "?pagina=$paginaAtual"
-          "&limite=$clientesPorPagina"
-          "&search=$search",
-        ),
+      final response = await ApiClient.get(
+        "/clientes/evento/$eventoId"
+        "?pagina=$paginaAtual"
+        "&limite=$clientesPorPagina"
+        "&search=$search",
       );
 
       if (response.statusCode == 200) {

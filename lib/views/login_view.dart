@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'dart:ui';
-import 'package:busao_do_role/views/home_view.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../services/auth_service.dart';
+import 'home_view.dart';
 import 'cadastro_view.dart';
 import 'esqueci_senha_view.dart';
 
@@ -16,30 +15,23 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final nomeController = TextEditingController();
+  final emailController = TextEditingController();
   final senhaController = TextEditingController();
 
   bool carregando = false;
 
   Future<void> realizarLogin() async {
-    setState(() {
-      carregando = true;
-    });
+    setState(() => carregando = true);
 
     try {
-      final url = Uri.parse('http://127.0.0.1:8000/usuarios/login');
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'usuario': nomeController.text,
-          'senha': senhaController.text,
-        }),
+      final result = await AuthService.login(
+        emailController.text.trim(),
+        senhaController.text.trim(),
       );
 
-      if (response.statusCode == 200) {
-        if (!mounted) return;
+      if (!mounted) return;
+
+      if (result.sucesso) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login realizado com sucesso!'),
@@ -49,24 +41,25 @@ class _LoginViewState extends State<LoginView> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const HomeView(),
-          ),
+          MaterialPageRoute(builder: (_) => const HomeView()),
         );
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: Credenciais inválidas (${response.statusCode})')),
+          SnackBar(
+            content: Text(result.erro ?? 'Erro ao fazer login'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro de conexão: $e')),
+        SnackBar(
+          content: Text('Erro de conexão: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
-      setState(() {
-        carregando = false;
-      });
+      setState(() => carregando = false);
     }
   }
 
@@ -112,21 +105,23 @@ class _LoginViewState extends State<LoginView> {
                       children: [
                         Image.asset(
                           'assets/img/logo_branca.png',
-                          height: 180,
-                          fit: BoxFit.contain,
+                          height: 160,
                         ),
-                        const SizedBox(height: 5),
+
+                        const SizedBox(height: 10),
+
                         const Text(
                           "Bem-vindo de volta",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontFamily: 'Inter',
                           ),
                         ),
-                        const SizedBox(height: 6),
+
+                        const SizedBox(height: 5),
+
                         const Text(
                           "Acesse sua conta para continuar.",
                           textAlign: TextAlign.center,
@@ -135,119 +130,83 @@ class _LoginViewState extends State<LoginView> {
                             fontSize: 13,
                           ),
                         ),
-                        const SizedBox(height: 30),
-                        
-                        _buildExternalIconInput(
-                          "Usuario",
-                          "Usuario",
-                          LucideIcons.user,
-                          controller: nomeController,
+
+                        const SizedBox(height: 25),
+
+                        _input(
+                          label: "Email",
+                          hint: "Digite seu email",
+                          icon: LucideIcons.mail,
+                          controller: emailController,
                         ),
-                        
-                        _buildExternalIconInput(
-                          "Senha",
-                          "••••••••",
-                          LucideIcons.lock,
+
+                        _input(
+                          label: "Senha",
+                          hint: "••••••••",
+                          icon: LucideIcons.lock,
                           controller: senhaController,
                           isPassword: true,
                         ),
 
-                        Padding(
-                          padding: const EdgeInsets.only(left: 35, right: 10),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context, 
-                                  MaterialPageRoute(builder: (_) => const EsqueciSenhaView())
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text(
-                                "Esqueceu a senha?",
-                                style: TextStyle(
-                                  color: Color(0xFFA0A0A0),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const EsqueciSenhaView(),
                                 ),
+                              );
+                            },
+                            child: const Text(
+                              "Esqueceu a senha?",
+                              style: TextStyle(
+                                color: Color(0xFFA0A0A0),
+                                fontSize: 12,
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 10),
 
-                        Container(
-                          margin: const EdgeInsets.only(left: 35),
+                        SizedBox(
                           height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF8B0000), Color(0xFFFF0000)],
-                            ),
-                          ),
                           child: ElevatedButton(
                             onPressed: carregando ? null : realizarLogin,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
+                              backgroundColor: const Color(0xFFFF0000),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: carregando
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
+                                ? const CircularProgressIndicator(color: Colors.white)
                                 : const Text(
-                                    "Entrar no Rolê",
+                                    "Entrar",
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
                                     ),
                                   ),
                           ),
                         ),
-                        
-                        const SizedBox(height: 20),
 
-                        Padding(
-                          padding: const EdgeInsets.only(left: 35),
-                          child: Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CadastroView()));
-                              },
-                              child: const Text.rich(
-                                TextSpan(
-                                  text: "Não tem uma conta? ",
-                                  style: TextStyle(
-                                    color: Color(0xFFA0A0A0),
-                                    fontSize: 13,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: "Cadastre-se",
-                                      style: TextStyle(
-                                        color: Color(0xFFFF0000),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        const SizedBox(height: 15),
+
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CadastroView(),
                               ),
-                            ),
+                            );
+                          },
+                          child: const Text(
+                            "Não tem conta? Cadastre-se",
+                            style: TextStyle(color: Color(0xFFA0A0A0)),
                           ),
                         ),
                       ],
@@ -262,47 +221,39 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  Widget _buildExternalIconInput(
-    String label,
-    String hint,
-    IconData iconData, {
-    bool isPassword = false,
+  Widget _input({
+    required String label,
+    required String hint,
+    required IconData icon,
     required TextEditingController controller,
+    bool isPassword = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 48, bottom: 4),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFFA0A0A0),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFA0A0A0),
+              fontSize: 12,
             ),
           ),
+          const SizedBox(height: 5),
           TextField(
             controller: controller,
             obscureText: isPassword,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              icon: Icon(iconData, color: Colors.white, size: 20),
+              prefixIcon: Icon(icon, color: Colors.white),
               hintText: hint,
               hintStyle: const TextStyle(color: Color(0xFF666666)),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.03),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              enabledBorder: OutlineInputBorder(
+              fillColor: Colors.white10,
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.white10),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFFF0000)),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
