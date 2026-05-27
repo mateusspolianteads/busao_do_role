@@ -3,7 +3,7 @@ import 'auth_service.dart';
 
 class DioClient {
   static final Dio dio = Dio(BaseOptions(
-    baseUrl: "http://127.0.0.1:8000",
+    baseUrl: "https://busao-api.onrender.com",
     headers: {
       "Content-Type": "multipart/form-data",
     },

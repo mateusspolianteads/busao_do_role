@@ -41,7 +41,7 @@ class _CadastroViewState extends State<CadastroView> {
     });
 
     try {
-      final url = Uri.parse('http://127.0.0.1:8000/usuarios/cadastrar');
+      final url = Uri.parse('https://busao-api.onrender.com/usuarios/cadastrar');
 
       final response = await http.post(
         url,
