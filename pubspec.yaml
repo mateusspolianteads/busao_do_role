@@ -22,6 +22,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -36,3 +37,14 @@ flutter:
     - family: TitanOne
       fonts:
         - asset: assets/fonts/TitanOne-Regular.ttf
+
+# Configuração automática dos ícones do "Busão do Rolê"
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "app_icon_source.png"
+  web:
+    generate: true
+    image_path: "app_icon_source.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
