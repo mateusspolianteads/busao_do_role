@@ -1,6 +1,6 @@
 {
-    "name": "busao_do_role",
-    "short_name": "busao_do_role",
+    "name": "Busão do Rolê",
+    "short_name": "Busão do Rolê",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#8B0000",
