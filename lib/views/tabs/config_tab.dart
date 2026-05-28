@@ -12,7 +12,7 @@ class ConfigTab extends StatefulWidget {
 }
 
 class _ConfigTabState extends State<ConfigTab> {
-  bool notificacoes = true;
+  // 💡 REMOVIDO: Variável 'notificacoes' retirada daqui.
 
   @override
   Widget build(BuildContext context) {
@@ -50,18 +50,9 @@ class _ConfigTabState extends State<ConfigTab> {
               ThemeController.toggleTheme(v);
             },
           ),
-          const SizedBox(height: 20),
-          ConfigItemCard(
-            title: "Notificações",
-            subtitle: "Gerenciar avisos de novas vendas",
-            icon: LucideIcons.bell,
-            value: notificacoes,
-            onChanged: (v) {
-              setState(() {
-                notificacoes = v;
-              });
-            },
-          ),
+          
+          // 💡 REMOVIDO: O ConfigItemCard de Notificações foi retirado daqui.
+          
           const SizedBox(height: 20),
           LogoutCard(
             onLogoutPressed: () async {

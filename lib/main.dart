@@ -26,30 +26,36 @@ class BusaoDoRoleApp extends StatelessWidget {
 
           themeMode: currentMode,
 
-          // ANIMAÇÃO GLOBAL DO TEMA
           themeAnimationDuration: const Duration(milliseconds: 500),
           themeAnimationCurve: Curves.easeOutCubic,
-
-          builder: (context, child) {
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: child!,
-            );
-          },
 
           darkTheme: ThemeData(
             brightness: Brightness.dark,
             primaryColor: AppColors.primary,
             scaffoldBackgroundColor: AppColors.bgDark,
             fontFamily: 'Inter',
-            cardColor: const Color(0xFF121212),
+            
+            // 💡 ADICIONADO: Força todas as AppBars do app no modo Dark a usarem a TitanOne
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+              titleTextStyle: TextStyle(
+                fontFamily: 'TitanOne',
+                fontSize: 22,
+                color: Colors.white,
+              ),
+            ),
 
+            cardColor: const Color(0xFF121212),
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             hoverColor: Colors.transparent,
-
+            snackBarTheme: const SnackBarThemeData(
+              backgroundColor: Colors.red,
+              contentTextStyle: TextStyle(
+                color: Color.fromARGB(255, 27, 27, 27),
+                fontSize: 14,
+              ),
+            ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
                 elevation: 0,
@@ -65,12 +71,21 @@ class BusaoDoRoleApp extends StatelessWidget {
             primaryColor: Colors.red,
             scaffoldBackgroundColor: const Color(0xFFF5F5F5),
             fontFamily: 'Inter',
-            cardColor: Colors.white,
 
+            // 💡 ADICIONADO: Força todas as AppBars do app no modo Light a usarem a TitanOne
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+              titleTextStyle: TextStyle(
+                fontFamily: 'TitanOne',
+                fontSize: 22,
+                color: Colors.black,
+              ),
+            ),
+
+            cardColor: Colors.white,
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
             hoverColor: Colors.transparent,
-
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
                 elevation: 0,

@@ -1,4 +1,3 @@
-pubspec.yaml:
 name: busao_do_role
 description: "A new Flutter project."
 publish_to: 'none'
@@ -27,15 +26,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Configuração de Assets (Imagens, etc)
+  # Configuração de Assets
   assets:
     - assets/img/logo_branca.png
     - assets/img/logo_preta.png
 
-  # Caso queira adicionar a fonte Inter no futuro:
-  # fonts:
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #       - asset: assets/fonts/Inter-Bold.ttf
-  #         weight: 700
+  # Configuração das Fontes (Nome simplificado sem espaços para evitar bugs na Web)
+  fonts:
+    - family: TitanOne
+      fonts:
+        - asset: assets/fonts/TitanOne-Regular.ttf

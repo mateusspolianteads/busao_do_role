@@ -18,12 +18,11 @@ class _HomeViewState extends State<HomeView> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  
   late final List<Widget> _pages = [
     const DashboardTab(),
-    const EventosTab(),   
-    const PedidosTab(),  
-    const ConfigTab(),  
+    const EventosTab(),
+    const PedidosTab(),
+    const ConfigTab(),
   ];
 
   @override
@@ -38,20 +37,20 @@ class _HomeViewState extends State<HomeView> {
           key: _scaffoldKey,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
+          // No arquivo home_view.dart
           appBar: isMobile
               ? AppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,
-                  leading: IconButton(
-                    icon: Icon(
-                      LucideIcons.menu,
+                  title: Text(
+                    'Busão do Rolê',
+                    style: TextStyle(
+                      fontFamily:
+                          'TitanOne', // 👈 AQUI: Define a fonte deste texto
+                      fontSize: 22,
+                      fontWeight: FontWeight.w400,
                       color: isDark ? Colors.white : Colors.black,
                     ),
-                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                  ),
-                  title: Image.asset(
-                    isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
-                    height: 50,
                   ),
                   centerTitle: true,
                 )
@@ -76,7 +75,9 @@ class _HomeViewState extends State<HomeView> {
                     color: Theme.of(context).cardColor,
                     border: Border(
                       right: BorderSide(
-                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE5E5E5),
+                        color: isDark
+                            ? const Color(0xFF1E1E1E)
+                            : const Color(0xFFE5E5E5),
                       ),
                     ),
                   ),
@@ -85,7 +86,6 @@ class _HomeViewState extends State<HomeView> {
                     isDark: isDark,
                   ),
                 ),
-
               Expanded(
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 400),
@@ -128,11 +128,16 @@ class _HomeViewState extends State<HomeView> {
       color: isMobile ? Theme.of(context).cardColor : Colors.transparent,
       child: Column(
         children: [
+          // MANTIDO: Logo maximizada para compensar as bordas transparentes do asset
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40),
+            padding:
+                const EdgeInsets.only(top: 25, bottom: 20, left: 5, right: 5),
             child: Image.asset(
-              isDark ? 'assets/img/logo_branca.png' : 'assets/img/logo_preta.png',
-              width: 180,
+              isDark
+                  ? 'assets/img/logo_branca.png'
+                  : 'assets/img/logo_preta.png',
+              width: 260,
+              fit: BoxFit.contain,
             ),
           ),
 
@@ -173,13 +178,17 @@ class _HomeViewState extends State<HomeView> {
           },
           leading: Icon(
             icon,
-            color: isActive ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : Colors.black54),
+            color: isActive
+                ? Colors.white
+                : (isDark ? const Color(0xFFA0A0A0) : Colors.black54),
             size: 20,
           ),
           title: Text(
             label,
             style: TextStyle(
-              color: isActive ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : Colors.black87),
+              color: isActive
+                  ? Colors.white
+                  : (isDark ? const Color(0xFFA0A0A0) : Colors.black87),
               fontWeight: FontWeight.w600,
               fontSize: 15,
             ),

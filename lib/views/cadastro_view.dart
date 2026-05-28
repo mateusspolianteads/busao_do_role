@@ -26,6 +26,23 @@ class _CadastroViewState extends State<CadastroView> {
   bool ocultarConfirmarSenha = true;
 
   Future<void> cadastrarUsuario() async {
+    // 1. VALIDAÇÃO DE CAMPOS VAZIOS: Verifica localmente antes de qualquer ação
+    if (nomeController.text.trim().isEmpty ||
+        cpfController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        senhaController.text.trim().isEmpty ||
+        confirmarSenhaController.text.trim().isEmpty) {
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, preencha todos os campos obrigatórios!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Para a execução e não chama a API
+    }
+
+    // 2. VALIDAÇÃO DE SENHAS COINCIDENTES
     if (senhaController.text != confirmarSenhaController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -41,7 +58,8 @@ class _CadastroViewState extends State<CadastroView> {
     });
 
     try {
-      final url = Uri.parse('https://busao-api.onrender.com/usuarios/cadastrar');
+      final url =
+          Uri.parse('https://busao-api.onrender.com/usuarios/cadastrar');
 
       final response = await http.post(
         url,
@@ -49,9 +67,9 @@ class _CadastroViewState extends State<CadastroView> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'nome': nomeController.text,
-          'cpf_cnpj': cpfController.text,
-          'email': emailController.text,
+          'nome': nomeController.text.trim(),
+          'cpf_cnpj': cpfController.text.trim(),
+          'email': emailController.text.trim(),
           'senha': senhaController.text,
         }),
       );
@@ -73,9 +91,31 @@ class _CadastroViewState extends State<CadastroView> {
           ),
         );
       } else {
+        String mensagem = 'Erro ao cadastrar';
+
+        try {
+          final data = jsonDecode(response.body);
+
+          if (data['detail'] != null) {
+            final detail = data['detail'];
+
+            if (detail is String) {
+              mensagem = detail;
+            } else if (detail is List && detail.isNotEmpty) {
+              mensagem = detail[0]['msg'] ?? 'Erro de validação';
+            }
+          }
+        } catch (_) {
+          mensagem = 'Erro ao cadastrar (${response.statusCode})';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao cadastrar (${response.statusCode})'),
+            backgroundColor: Colors.red,
+            content: Text(
+              mensagem,
+              style: const TextStyle(color: Colors.white), // Alterado para branco para melhor leitura
+            ),
           ),
         );
       }
@@ -83,12 +123,15 @@ class _CadastroViewState extends State<CadastroView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erro de conexão: $e'),
+          backgroundColor: Colors.red,
         ),
       );
     } finally {
-      setState(() {
-        carregando = false;
-      });
+      if (mounted) {
+        setState(() {
+          carregando = false;
+        });
+      }
     }
   }
 
@@ -112,15 +155,15 @@ class _CadastroViewState extends State<CadastroView> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Reduzido o padding externo vertical
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
+              constraints: const BoxConstraints(maxWidth: 360), // Largura igualada ao Login
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 25, 30, 25),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12), // Container mais justo sem padding no topo
                     decoration: BoxDecoration(
                       color: const Color(0xFF121212),
                       borderRadius: BorderRadius.circular(20),
@@ -132,36 +175,44 @@ class _CadastroViewState extends State<CadastroView> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Image.asset(
-                          'assets/img/logo_branca.png',
-                          width: 640,
-                          height: 250,
-                          fit: BoxFit.contain,
+                        // Logo Maximizada (Preenche as laterais perfeitamente)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                          child: Image.asset(
+                            'assets/img/logo_branca.png',
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
+                          ),
                         ),
+                        
                         const SizedBox(height: 5),
+                        
                         const Text(
                           "Crie sua conta",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 22, // Equalizado com o Login
+                            fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontFamily: 'Inter',
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        
+                        const SizedBox(height: 2),
+                        
                         const Text(
                           "Preencha os dados para começar a usar.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Color(0xFFA0A0A0),
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
-                        const SizedBox(height: 25),
+                        
+                        const SizedBox(height: 15), // Espaçamento reduzido antes dos inputs
+                        
                         _buildExternalIconInput(
-                          "Usuario",
-                          "Usuario",
+                          "Usuário",
+                          "Nome de usuário",
                           LucideIcons.user,
                           controller: nomeController,
                         ),
@@ -189,11 +240,7 @@ class _CadastroViewState extends State<CadastroView> {
                               color: const Color(0xFF666666),
                               size: 18,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                ocultarSenha = !ocultarSenha;
-                              });
-                            },
+                            onPressed: () => setState(() => ocultarSenha = !ocultarSenha),
                           ),
                         ),
                         _buildExternalIconInput(
@@ -208,85 +255,87 @@ class _CadastroViewState extends State<CadastroView> {
                               color: const Color(0xFF666666),
                               size: 18,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                ocultarConfirmarSenha = !ocultarConfirmarSenha;
-                              });
-                            },
+                            onPressed: () => setState(() => ocultarConfirmarSenha = !ocultarConfirmarSenha),
                           ),
                         ),
+                        
                         const SizedBox(height: 10),
-                        Container(
-                          margin: const EdgeInsets.only(left: 35),
-                          height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF8B0000),
-                                Color(0xFFFF0000),
-                              ],
-                            ),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: carregando ? null : cadastrarUsuario,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        
+                        // Botão Cadastrar compacto e estilizado
+                        SizedBox(
+                          height: 46,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFF8B0000),
+                                  Color(0xFFFF0000),
+                                ],
                               ),
                             ),
-                            child: carregando
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Cadastrar",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 35),
-                          child: Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginView(),
-                                  ),
-                                );
-                              },
-                              child: const Text.rich(
-                                TextSpan(
-                                  text: "Já tem uma conta? ",
-                                  style: TextStyle(
-                                    color: Color(0xFFA0A0A0),
-                                    fontSize: 13,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: "Faça login",
+                            child: ElevatedButton(
+                              onPressed: carregando ? null : cadastrarUsuario,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: carregando
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Cadastrar",
                                       style: TextStyle(
-                                        color: Color(0xFFFF0000),
+                                        color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 5),
+                        
+                        // Link de voltar para o Login limpo e com paddings zerados
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 35),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LoginView(),
                               ),
+                            );
+                          },
+                          child: const Text.rich(
+                            TextSpan(
+                              text: "Já tem uma conta? ",
+                              style: TextStyle(
+                                color: Color(0xFFA0A0A0),
+                                fontSize: 13,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: "Faça login",
+                                  style: TextStyle(
+                                    color: Color(0xFFFF0000),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -311,55 +360,55 @@ class _CadastroViewState extends State<CadastroView> {
     required TextEditingController controller,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 10), // Reduzido de 14 para 10 para achatar verticalmente
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 48, bottom: 4),
+            padding: const EdgeInsets.only(left: 36, bottom: 4), // Alinhado ao início do TextField remodelado
             child: Text(
               label,
               style: const TextStyle(
                 color: Color(0xFFA0A0A0),
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          TextField(
-            controller: controller,
-            obscureText: obscureText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
-            decoration: InputDecoration(
-              icon: Icon(
-                iconData,
+          SizedBox(
+            height: 44, // Força a altura exata igualada ao LoginView
+            child: TextField(
+              controller: controller,
+              obscureText: obscureText,
+              style: const TextStyle(
                 color: Colors.white,
-                size: 20,
+                fontSize: 14,
               ),
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: Color(0xFF666666),
-              ),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.03),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              suffixIcon: suffixIcon,
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(
-                  color: Colors.white10,
+              decoration: InputDecoration(
+                prefixIcon: Icon(
+                  iconData,
+                  color: Colors.white,
+                  size: 18,
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(
-                  color: Color(0xFFFF0000),
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: Color(0xFF666666),
+                  fontSize: 14,
+                ),
+                filled: true,
+                fillColor: Colors.white10, // Cor de fundo igual ao login
+                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                suffixIcon: suffixIcon,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFFF0000),
+                    width: 1,
+                  ),
                 ),
               ),
             ),

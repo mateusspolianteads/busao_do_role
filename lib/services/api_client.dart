@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiClient {
-
   static const String baseUrl = "https://busao-api.onrender.com";
 
   static Future<http.Response> request(
@@ -11,19 +10,15 @@ class ApiClient {
     String method = "GET",
     Map<String, dynamic>? body,
   }) async {
-
     Future<http.Response> sendRequest(String? token) async {
-
       final uri = Uri.parse("$baseUrl$endpoint");
 
       final headers = {
         "Content-Type": "application/json",
-        if (token != null)
-          "Authorization": "Bearer $token",
+        if (token != null) "Authorization": "Bearer $token",
       };
 
       switch (method.toUpperCase()) {
-
         case "POST":
           return await http.post(
             uri,
@@ -39,26 +34,18 @@ class ApiClient {
           );
 
         case "DELETE":
-          return await http.delete(
-            uri,
-            headers: headers,
-          );
+          return await http.delete(uri, headers: headers);
 
         default:
-          return await http.get(
-            uri,
-            headers: headers,
-          );
+          return await http.get(uri, headers: headers);
       }
     }
 
     final token = await AuthService.getToken();
-
     var response = await sendRequest(token);
 
-    // token expirado
+    // refresh token automático
     if (response.statusCode == 401) {
-
       final novoToken = await AuthService.refreshToken();
 
       if (novoToken != null) {
@@ -69,15 +56,19 @@ class ApiClient {
     return response;
   }
 
-  static Future<http.Response> get(String endpoint) async {
-    return await request(endpoint);
+  // -------------------------------
+  // MÉTODOS PRONTOS
+  // -------------------------------
+
+  static Future<http.Response> get(String endpoint) {
+    return request(endpoint);
   }
 
   static Future<http.Response> post(
     String endpoint,
     Map<String, dynamic> body,
-  ) async {
-    return await request(
+  ) {
+    return request(
       endpoint,
       method: "POST",
       body: body,
@@ -87,20 +78,50 @@ class ApiClient {
   static Future<http.Response> put(
     String endpoint,
     Map<String, dynamic> body,
-  ) async {
-    return await request(
+  ) {
+    return request(
       endpoint,
       method: "PUT",
       body: body,
     );
   }
 
-  static Future<http.Response> delete(
-    String endpoint,
-  ) async {
-    return await request(
+  static Future<http.Response> delete(String endpoint) {
+    return request(
       endpoint,
       method: "DELETE",
     );
+  }
+
+  // -------------------------------
+  // TRATAMENTO DE ERRO DA API
+  // -------------------------------
+
+  static String getErrorMessage(http.Response response) {
+    try {
+      final data = jsonDecode(response.body);
+
+      if (data is Map && data['detail'] != null) {
+        final detail = data['detail'];
+
+        if (detail is String) return detail;
+
+        if (detail is List && detail.isNotEmpty) {
+          return detail[0]['msg'] ?? "Erro de validação";
+        }
+      }
+
+      return "Erro inesperado";
+    } catch (_) {
+      return "Erro inesperado";
+    }
+  }
+
+  // -------------------------------
+  // CHECAR SUCESSO PADRÃO
+  // -------------------------------
+
+  static bool isSuccess(http.Response response) {
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 }

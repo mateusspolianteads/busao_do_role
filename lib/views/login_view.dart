@@ -83,15 +83,17 @@ class _LoginViewState extends State<LoginView> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            // Reduzido o padding externo para não empurrar o container
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
+              constraints: const BoxConstraints(maxWidth: 360), // Reduzido ligeiramente a largura para achatar o design
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 25, 30, 25),
+                    // AJUSTE CRÍTICO: Padding vertical reduzido para o mínimo (12 acima e abaixo)
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                     decoration: BoxDecoration(
                       color: const Color(0xFF121212),
                       borderRadius: BorderRadius.circular(20),
@@ -100,38 +102,43 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.min, // Força o container a ter o tamanho exato dos filhos
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Image.asset(
-                          'assets/img/logo_branca.png',
-                          height: 160,
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        const Text(
-                          "Bem-vindo de volta",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        // Logo maximizada com margens zeradas nas verticais
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                          child: Image.asset(
+                            'assets/img/logo_branca.png',
+                            width: double.infinity,
+                            fit: BoxFit.fitWidth,
                           ),
                         ),
 
                         const SizedBox(height: 5),
 
                         const Text(
+                          "Bem-vindo de volta",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22, // Reduzido de 24 para 22 para economizar espaço vertical
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2), // Espaço mínimo
+
+                        const Text(
                           "Acesse sua conta para continuar.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Color(0xFFA0A0A0),
-                            fontSize: 13,
+                            fontSize: 12, // Reduzido de 13 para 12
                           ),
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 15), // Reduzido de 20 para 15
 
                         _input(
                           label: "Email",
@@ -148,31 +155,40 @@ class _LoginViewState extends State<LoginView> {
                           isPassword: true,
                         ),
 
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const EsqueciSenhaView(),
+                        // Alinhamento do "Esqueceu a senha" colado no input
+                        Transform.translate(
+                          offset: const Offset(0, -8), // Puxa o botão para cima, eliminando o vazio
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const EsqueciSenhaView(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Esqueceu a senha?",
+                                style: TextStyle(
+                                  color: Color(0xFFA0A0A0),
+                                  fontSize: 12,
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              "Esqueceu a senha?",
-                              style: TextStyle(
-                                color: Color(0xFFA0A0A0),
-                                fontSize: 12,
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
 
                         SizedBox(
-                          height: 50,
+                          height: 46, // Reduzido de 50 para 46 (mais compacto)
                           child: ElevatedButton(
                             onPressed: carregando ? null : realizarLogin,
                             style: ElevatedButton.styleFrom(
@@ -193,9 +209,14 @@ class _LoginViewState extends State<LoginView> {
                           ),
                         ),
 
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 5), // Espaço mínimo
 
                         TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 35),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -206,7 +227,10 @@ class _LoginViewState extends State<LoginView> {
                           },
                           child: const Text(
                             "Não tem conta? Cadastre-se",
-                            style: TextStyle(color: Color(0xFFA0A0A0)),
+                            style: TextStyle(
+                              color: Color(0xFFA0A0A0),
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -229,7 +253,7 @@ class _LoginViewState extends State<LoginView> {
     bool isPassword = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 10), // Reduzido o espaçamento inferior de 14 para 10
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -237,23 +261,27 @@ class _LoginViewState extends State<LoginView> {
             label,
             style: const TextStyle(
               color: Color(0xFFA0A0A0),
-              fontSize: 12,
+              fontSize: 11, // Reduzido de 12 para 11
             ),
           ),
-          const SizedBox(height: 5),
-          TextField(
-            controller: controller,
-            obscureText: isPassword,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: Colors.white),
-              hintText: hint,
-              hintStyle: const TextStyle(color: Color(0xFF666666)),
-              filled: true,
-              fillColor: Colors.white10,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 44, // Força os campos de texto a serem ligeiramente mais baixos/achatados
+            child: TextField(
+              controller: controller,
+              obscureText: isPassword,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                prefixIcon: Icon(icon, color: Colors.white, size: 18),
+                hintText: hint,
+                hintStyle: const TextStyle(color: Color(0xFF666666), fontSize: 14),
+                filled: true,
+                fillColor: Colors.white10,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10), // Centraliza o texto internamente
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),

@@ -8,5 +8,6 @@ class AppColors {
   static const Color textMain = Colors.white;
   static const Color textDim = Color(0xFFA0A0A0);
   static const Color border = Colors.white10;
-  static final Color glass = Colors.white.withOpacity(0.03);
+
+  static Color get glass => Colors.white.withOpacity(0.03);
 }
