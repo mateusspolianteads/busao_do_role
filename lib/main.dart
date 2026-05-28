@@ -23,15 +23,18 @@ class BusaoDoRoleApp extends StatelessWidget {
       valueListenable: ThemeController.themeNotifier,
       builder: (context, ThemeMode currentMode, _) {
         final isDark = currentMode == ThemeMode.dark;
+        
+        // Define a cor sólida de fundo baseada no tema para evitar frestas na Web
+        final currentBgColor = isDark ? AppColors.bgDark : const Color(0xFFF5F5F5);
 
         // Estilo global da barra do sistema de acordo com o tema atual
         final systemUiStyle = SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent, // Deixa a barra transparente para assumir a cor do app
+          statusBarColor: currentBgColor, // Ajustado: Cor sólida para cobrir qualquer vazamento
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark, // Ícones (Wi-Fi, Bateria)
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light, // Necessário para iOS
           
           // Ajusta a barra de navegação inferior (botões virtuais do celular)
-          systemNavigationBarColor: isDark ? AppColors.bgDark : const Color(0xFFF5F5F5),
+          systemNavigationBarColor: currentBgColor,
           systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         );
 
@@ -58,9 +61,9 @@ class BusaoDoRoleApp extends StatelessWidget {
                 backgroundColor: AppColors.bgDark,
                 elevation: 0,
                 systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Colors.transparent,
-                  statusBarIconBrightness: Brightness.light, // Ícones brancos no dark mode
-                  statusBarBrightness: Brightness.dark, // Texto branco no iOS
+                  statusBarColor: AppColors.bgDark, // Ajustado: Cor sólida no topo do Dark Mode
+                  statusBarIconBrightness: Brightness.light, 
+                  statusBarBrightness: Brightness.dark, 
                   systemNavigationBarColor: AppColors.bgDark,
                   systemNavigationBarIconBrightness: Brightness.light,
                 ),
@@ -87,7 +90,7 @@ class BusaoDoRoleApp extends StatelessWidget {
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: AppColors.primary, // Define a cor principal no botão escuro
+                  backgroundColor: AppColors.primary, 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -98,7 +101,7 @@ class BusaoDoRoleApp extends StatelessWidget {
             // ================= TEMA CLARO (LIGHT) =================
             theme: ThemeData(
               brightness: Brightness.light,
-              primaryColor: AppColors.primary, // Ajustado para usar sua cor principal
+              primaryColor: AppColors.primary, 
               scaffoldBackgroundColor: const Color(0xFFF5F5F5),
               fontFamily: 'Inter',
 
@@ -108,9 +111,9 @@ class BusaoDoRoleApp extends StatelessWidget {
                 backgroundColor: Color(0xFFF5F5F5),
                 elevation: 0,
                 systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Colors.transparent,
-                  statusBarIconBrightness: Brightness.dark, // Ícones escuros no light mode
-                  statusBarBrightness: Brightness.light, // Texto escuro no iOS
+                  statusBarColor: Color(0xFFF5F5F5), // Ajustado: Cor sólida no topo do Light Mode
+                  statusBarIconBrightness: Brightness.dark, 
+                  statusBarBrightness: Brightness.light, 
                   systemNavigationBarColor: Color(0xFFF5F5F5),
                   systemNavigationBarIconBrightness: Brightness.dark,
                 ),
@@ -129,7 +132,7 @@ class BusaoDoRoleApp extends StatelessWidget {
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: AppColors.primary, // Define a cor principal no botão claro
+                  backgroundColor: AppColors.primary, 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
