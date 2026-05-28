@@ -1,11 +1,11 @@
 {
-    "name": "Busão do Rolê",
-    "short_name": "Busão do Rolê",
+    "name": "busao_do_role",
+    "short_name": "busao_do_role",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0D0D0D",
-    "theme_color": "#0D0D0D",
-    "description": "Painel de controle e vendas do Busão do Rolê.",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
