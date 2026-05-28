@@ -1,23 +1,32 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
 
+<head>
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 
+  <style>
+    html,
+    body {
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+
+      html,
+      body {
+        background-color: #000000;
+      }
+    }
+  </style>
+
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Busão do Rolê">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">s
 
-  <link rel="icon" type="image/png" href="logo_preta.png"/>
-
-  <title>Busão do Rolê</title>
-  <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
   <!--
     You can customize the "flutter_bootstrap.js" script.
@@ -29,4 +38,5 @@
   -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>
