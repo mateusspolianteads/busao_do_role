@@ -2,6 +2,7 @@ import 'package:busao_do_role/services/dio_client.dart';
 import 'package:busao_do_role/views/splash_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/app_colors.dart';
 import 'theme_controller.dart';
@@ -23,19 +24,19 @@ class BusaoDoRoleApp extends StatelessWidget {
       valueListenable: ThemeController.themeNotifier,
       builder: (context, ThemeMode currentMode, _) {
         final isDark = currentMode == ThemeMode.dark;
-        
-        // Define a cor sólida de fundo baseada no tema para evitar frestas na Web
-        final currentBgColor = isDark ? AppColors.bgDark : const Color(0xFFF5F5F5);
 
-        // Estilo global da barra do sistema de acordo com o tema atual
+        final currentBgColor =
+            isDark ? AppColors.bgDark : const Color(0xFFF5F5F5);
+
         final systemUiStyle = SystemUiOverlayStyle(
-          statusBarColor: currentBgColor, // Ajustado: Cor sólida para cobrir qualquer vazamento
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark, // Ícones (Wi-Fi, Bateria)
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light, // Necessário para iOS
-          
-          // Ajusta a barra de navegação inferior (botões virtuais do celular)
+          statusBarColor: currentBgColor,
+          statusBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness:
+              isDark ? Brightness.dark : Brightness.light,
           systemNavigationBarColor: currentBgColor,
-          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
         );
 
         return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -44,26 +45,37 @@ class BusaoDoRoleApp extends StatelessWidget {
             title: 'Busão do Rolê',
             debugShowCheckedModeBanner: false,
 
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+
+            supportedLocales: const [
+              Locale('pt', 'BR'),
+              Locale('en', 'US'),
+            ],
+
+            locale: const Locale('pt', 'BR'),
+
             themeMode: currentMode,
             themeAnimationDuration: const Duration(milliseconds: 500),
             themeAnimationCurve: Curves.easeOutCubic,
 
-            // ================= TEMA ESCURO (DARK) =================
             darkTheme: ThemeData(
               brightness: Brightness.dark,
               primaryColor: AppColors.primary,
               scaffoldBackgroundColor: AppColors.bgDark,
               fontFamily: 'Inter',
 
-              // Copia as configurações de estilo para todas as app bars e telas do tema escuro
               appBarTheme: const AppBarTheme(
                 centerTitle: true,
                 backgroundColor: AppColors.bgDark,
                 elevation: 0,
                 systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: AppColors.bgDark, // Ajustado: Cor sólida no topo do Dark Mode
-                  statusBarIconBrightness: Brightness.light, 
-                  statusBarBrightness: Brightness.dark, 
+                  statusBarColor: AppColors.bgDark,
+                  statusBarIconBrightness: Brightness.light,
+                  statusBarBrightness: Brightness.dark,
                   systemNavigationBarColor: AppColors.bgDark,
                   systemNavigationBarIconBrightness: Brightness.light,
                 ),
@@ -90,7 +102,7 @@ class BusaoDoRoleApp extends StatelessWidget {
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: AppColors.primary, 
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -98,22 +110,20 @@ class BusaoDoRoleApp extends StatelessWidget {
               ),
             ),
 
-            // ================= TEMA CLARO (LIGHT) =================
             theme: ThemeData(
               brightness: Brightness.light,
-              primaryColor: AppColors.primary, 
+              primaryColor: AppColors.primary,
               scaffoldBackgroundColor: const Color(0xFFF5F5F5),
               fontFamily: 'Inter',
 
-              // Copia as configurações de estilo para todas as app bars e telas do tema claro
               appBarTheme: const AppBarTheme(
                 centerTitle: true,
                 backgroundColor: Color(0xFFF5F5F5),
                 elevation: 0,
                 systemOverlayStyle: SystemUiOverlayStyle(
-                  statusBarColor: Color(0xFFF5F5F5), // Ajustado: Cor sólida no topo do Light Mode
-                  statusBarIconBrightness: Brightness.dark, 
-                  statusBarBrightness: Brightness.light, 
+                  statusBarColor: Color(0xFFF5F5F5),
+                  statusBarIconBrightness: Brightness.dark,
+                  statusBarBrightness: Brightness.light,
                   systemNavigationBarColor: Color(0xFFF5F5F5),
                   systemNavigationBarIconBrightness: Brightness.dark,
                 ),
@@ -132,7 +142,7 @@ class BusaoDoRoleApp extends StatelessWidget {
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: AppColors.primary, 
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

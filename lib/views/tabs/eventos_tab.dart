@@ -450,27 +450,38 @@ class _EventosTabState extends State<EventosTab> {
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: () => _abrirFormulario(),
-                icon: Icon(LucideIcons.plus,
-                    size: 18, color: isDark ? Colors.white : Colors.black),
-                label: isMobile
-                    ? const SizedBox.shrink()
-                    : Text("Adicionar",
+              isMobile
+                  ? ElevatedButton(
+                      onPressed: () => _abrirFormulario(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.black.withOpacity(0.05),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                      ),
+                      child: Icon(
+                        LucideIcons.plus,
+                        size: 18,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () => _abrirFormulario(),
+                      icon: Icon(
+                        LucideIcons.plus,
+                        size: 18,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      label: Text(
+                        "Adicionar",
                         style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.black.withOpacity(0.05),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 15 : 20,
-                      vertical: isMobile ? 15 : 20),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-              ),
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    )
             ],
           ),
           const SizedBox(height: 30),
@@ -487,11 +498,12 @@ class _EventosTabState extends State<EventosTab> {
                             style: TextStyle(color: subtitleColor)),
                       )
                     : GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: isMobile ? 1 : 3,
-                          crossAxisSpacing: 20,
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 600,
                           mainAxisSpacing: 20,
-                          childAspectRatio: 2.3,
+                          crossAxisSpacing: 20,
+                          mainAxisExtent: 430,
                         ),
                         itemCount: eventos.length,
                         itemBuilder: (context, index) {
@@ -511,8 +523,8 @@ class _EventosTabState extends State<EventosTab> {
         isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
     final textColor = isDark ? Colors.white : Colors.black;
 
-    // Tentativa de formatar a data de forma amigável se vier como ISO
     String dataDisplay = evento['data_evento'] ?? '--/--/----';
+
     if (dataDisplay.contains('T')) {
       try {
         final d = DateTime.parse(dataDisplay);
@@ -522,156 +534,132 @@ class _EventosTabState extends State<EventosTab> {
     }
 
     return InkWell(
-      onTap: () => _abrirDetalhesEvento(Map<String, dynamic>.from(evento)),
-      borderRadius: BorderRadius.circular(20),
+      onTap: () => _abrirDetalhesEvento(
+        Map<String, dynamic>.from(evento),
+      ),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    evento['nome'] ?? 'Sem Nome',
-                    style: TextStyle(
-                        color: textColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(LucideIcons.pencil,
-                          size: 16,
-                          color: isDark
-                              ? const Color(0xFFA0A0A0)
-                              : Colors.grey[700]),
-                      onPressed: () => _abrirFormulario(
-                          evento: Map<String, dynamic>.from(evento)),
-                    ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.trash2,
-                          size: 16, color: Colors.red),
-                      onPressed: () async {
-                        final confirmar = await showDialog(
-                          context: context,
-                          builder: (context) {
-                            final isDark =
-                                Theme.of(context).brightness == Brightness.dark;
-
-                            return AlertDialog(
-                              backgroundColor: Theme.of(context).cardColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              title: const Text(
-                                "Excluir evento?",
-                              ),
-                              content: Text(
-                                "Tem certeza que deseja excluir este evento? Essa ação não pode ser desfeita.",
-                                style: TextStyle(
-                                  color:
-                                      isDark ? Colors.white70 : Colors.black87,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context, false);
-                                  },
-                                  child: Text(
-                                    "Cancelar",
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context, true);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  child: const Text(
-                                    "Excluir",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (confirmar == true) {
-                          _deletarEvento(evento['id']);
-                        }
-                      },
-                    ),
-                  ],
-                )
-              ],
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 230,
+                child: evento['imagem'] != null &&
+                        evento['imagem'].toString().isNotEmpty
+                    ? Image.network(
+                        evento['imagem'],
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: const Color(0xFF050505),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          "MEU EVENTO",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 3,
+                            color: Color(0xFFC41313),
+                          ),
+                        ),
+                      ),
+              ),
             ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                const Icon(LucideIcons.mapPin,
-                    size: 14, color: Color(0xFFB30000)),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    evento['local'] ?? 'Sem local',
-                    style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          evento['nome'] ?? 'Sem Nome',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(LucideIcons.pencil, size: 14),
+                        onPressed: () => _abrirFormulario(
+                          evento: Map<String, dynamic>.from(evento),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          LucideIcons.trash2,
+                          size: 14,
+                          color: Colors.red,
+                        ),
+                        onPressed: () => _deletarEvento(evento['id']),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                const Icon(LucideIcons.calendar,
-                    size: 14, color: Color(0xFFB30000)),
-                const SizedBox(width: 5),
-                Text(dataDisplay,
-                    style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        fontSize: 13)),
-                const SizedBox(width: 15),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(5),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.mapPin,
+                        size: 14,
+                        color: Color(0xFFB30000),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          evento['local'] ?? 'Sem local',
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    "R\$ ${evento['valor_passagem'] ?? '0.0'}",
-                    style: const TextStyle(
-                        fontSize: 11,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.calendar,
+                        size: 14,
+                        color: Color(0xFFB30000),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(dataDisplay),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      "R\$ ${evento['valor_passagem'] ?? '0.0'}",
+                      style: const TextStyle(
                         color: Colors.green,
-                        fontWeight: FontWeight.bold),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                )
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -759,12 +747,31 @@ class _EventosTabState extends State<EventosTab> {
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _dataController,
+                        readOnly: true,
                         style: TextStyle(color: textColor),
                         decoration: _buildInputDecoration(
-                            "Data (Ex: 20/10/2026)", LucideIcons.calendar),
+                          "Data do Evento",
+                          LucideIcons.calendar,
+                        ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Informe a data'
                             : null,
+                        onTap: () async {
+                          final dataSelecionada = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                            locale: const Locale('pt', 'BR'),
+                          );
+
+                          if (dataSelecionada != null) {
+                            _dataController.text =
+                                "${dataSelecionada.day.toString().padLeft(2, '0')}/"
+                                "${dataSelecionada.month.toString().padLeft(2, '0')}/"
+                                "${dataSelecionada.year}";
+                          }
+                        },
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
@@ -803,7 +810,7 @@ class _EventosTabState extends State<EventosTab> {
                                   color: Colors.white)
                               : const Text("SALVAR EVENTO",
                                   style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white)),
                         ),
