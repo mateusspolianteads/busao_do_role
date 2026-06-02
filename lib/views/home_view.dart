@@ -37,7 +37,6 @@ class _HomeViewState extends State<HomeView> {
           key: _scaffoldKey,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-          // No arquivo home_view.dart
           appBar: isMobile
               ? AppBar(
                   backgroundColor: Colors.transparent,
@@ -45,8 +44,7 @@ class _HomeViewState extends State<HomeView> {
                   title: Text(
                     'Busão do Rolê',
                     style: TextStyle(
-                      fontFamily:
-                          'TitanOne', // 👈 AQUI: Define a fonte deste texto
+                      fontFamily: 'TitanOne',
                       fontSize: 22,
                       fontWeight: FontWeight.w400,
                       color: isDark ? Colors.white : Colors.black,
@@ -128,16 +126,48 @@ class _HomeViewState extends State<HomeView> {
       color: isMobile ? Theme.of(context).cardColor : Colors.transparent,
       child: Column(
         children: [
-          // MANTIDO: Logo maximizada para compensar as bordas transparentes do asset
           Padding(
-            padding:
-                const EdgeInsets.only(top: 25, bottom: 20, left: 5, right: 5),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             child: Image.asset(
               isDark
                   ? 'assets/img/logo_branca.png'
                   : 'assets/img/logo_preta.png',
-              width: 260,
+              width: 280,
+              cacheWidth: 560, // Mantém a otimização de memória
               fit: BoxFit.contain,
+            ),
+          ),
+
+          // --- DIVISOR NEON MAIS FINO E ELEGANTE ---
+          Padding(
+            padding: const EdgeInsets.only(left: 30, right: 30, bottom: 25, top: 0),
+            child: Container(
+              height: 0.8, 
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Color(0xFFFF0000), 
+                    Color.fromARGB(255, 226, 7, 7), // Miolo ligeiramente mais claro para simular o filamento do neon
+                    Color.fromARGB(255, 197, 3, 3), 
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.2, 0.5, 0.8, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromARGB(255, 189, 1, 1).withOpacity(0.6),
+                    blurRadius: 5, 
+                    spreadRadius: 0.3,
+                  ),
+                  BoxShadow(
+                    color: const Color.fromARGB(255, 128, 2, 2).withOpacity(0.3),
+                    blurRadius: 5,
+                    spreadRadius: 0.3,
+                  ),
+                ],
+              ),
             ),
           ),
 
