@@ -451,7 +451,7 @@ class _EventosTabState extends State<EventosTab> {
                         evento['imagem'],
                         fit: BoxFit.cover,
                         // --- OTIMIZAÇÃO DE MEMÓRIA DA IMAGEM ---
-                        cacheWidth: 400, 
+                        cacheWidth: 800, 
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: const Color(0xFF050505),
                           alignment: Alignment.center,

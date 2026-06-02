@@ -26,6 +26,23 @@ class _HomeViewState extends State<HomeView> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(
+        const AssetImage('assets/img/logo_branca.png'),
+        context,
+      );
+
+      precacheImage(
+        const AssetImage('assets/img/logo_preta.png'),
+        context,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -36,7 +53,6 @@ class _HomeViewState extends State<HomeView> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
           appBar: isMobile
               ? AppBar(
                   backgroundColor: Colors.transparent,
@@ -53,7 +69,6 @@ class _HomeViewState extends State<HomeView> {
                   centerTitle: true,
                 )
               : null,
-
           drawer: isMobile
               ? Drawer(
                   child: _buildMenuContent(
@@ -62,7 +77,6 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 )
               : null,
-
           body: Row(
             children: [
               if (!isMobile)
@@ -126,43 +140,53 @@ class _HomeViewState extends State<HomeView> {
       color: isMobile ? Theme.of(context).cardColor : Colors.transparent,
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Image.asset(
-              isDark
-                  ? 'assets/img/logo_branca.png'
-                  : 'assets/img/logo_preta.png',
-              width: 280,
-              cacheWidth: 560, // Mantém a otimização de memória
-              fit: BoxFit.contain,
+          SizedBox(
+            height: 280,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Image.asset(
+                isDark
+                    ? 'assets/img/logo_branca.png'
+                    : 'assets/img/logo_preta.png',
+                width: 280,
+                cacheWidth: 560,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.medium,
+              ),
             ),
           ),
-
-          // --- DIVISOR NEON MAIS FINO E ELEGANTE ---
           Padding(
-            padding: const EdgeInsets.only(left: 30, right: 30, bottom: 25, top: 0),
+            padding: const EdgeInsets.only(
+              left: 30,
+              right: 30,
+              bottom: 25,
+              top: 0,
+            ),
             child: Container(
-              height: 0.8, 
+              height: 0.8,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 gradient: const LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Color(0xFFFF0000), 
-                    Color.fromARGB(255, 226, 7, 7), // Miolo ligeiramente mais claro para simular o filamento do neon
-                    Color.fromARGB(255, 197, 3, 3), 
+                    Color(0xFFFF0000),
+                    Color.fromARGB(255, 226, 7, 7),
+                    Color.fromARGB(255, 197, 3, 3),
                     Colors.transparent,
                   ],
                   stops: [0.0, 0.2, 0.5, 0.8, 1.0],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 189, 1, 1).withOpacity(0.6),
-                    blurRadius: 5, 
+                    color:
+                        const Color.fromARGB(255, 189, 1, 1).withOpacity(0.6),
+                    blurRadius: 5,
                     spreadRadius: 0.3,
                   ),
                   BoxShadow(
-                    color: const Color.fromARGB(255, 128, 2, 2).withOpacity(0.3),
+                    color:
+                        const Color.fromARGB(255, 128, 2, 2).withOpacity(0.3),
                     blurRadius: 5,
                     spreadRadius: 0.3,
                   ),
@@ -170,15 +194,11 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
           ),
-
           _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
           _buildNavItem("Eventos", LucideIcons.ticket, 1),
           _buildNavItem("Pedidos", LucideIcons.shoppingBag, 2),
-
           const Spacer(),
-
           _buildNavItem("Configurações", LucideIcons.settings, 3),
-
           const SizedBox(height: 20),
         ],
       ),
@@ -202,6 +222,7 @@ class _HomeViewState extends State<HomeView> {
             setState(() {
               _selectedIndex = index;
             });
+
             if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
               Navigator.pop(context);
             }
