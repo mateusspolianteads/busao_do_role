@@ -191,13 +191,16 @@ class _EventosTabState extends State<EventosTab> {
       _fetchEventos();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Evento deletado!'), backgroundColor: Colors.red),
+          const SnackBar(
+              content: Text('Evento deletado!'), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao deletar: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Erro ao deletar: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -218,7 +221,8 @@ class _EventosTabState extends State<EventosTab> {
         "evento_id": eventoSelecionado!['id'],
       });
 
-      final response = await DioClient.dio.post("/pedidos/importar-planilha", data: formData);
+      final response = await DioClient.dio
+          .post("/pedidos/importar-planilha", data: formData);
 
       if (response.statusCode == 201) {
         setState(() => paginaAtual = 1);
@@ -237,7 +241,8 @@ class _EventosTabState extends State<EventosTab> {
     }
   }
 
-  Future<void> editarCliente(int id, String nome, String email, String cpf, String telefone) async {
+  Future<void> editarCliente(
+      int id, String nome, String email, String cpf, String telefone) async {
     await ApiClient.request(
       "/clientes/atualizar/$id",
       method: "PUT",
@@ -426,8 +431,11 @@ class _EventosTabState extends State<EventosTab> {
               ElevatedButton(
                 onPressed: () => _abrirFormulario(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.black.withOpacity(0.05),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.all(16),
                 ),
                 child: isMobile
@@ -445,21 +453,27 @@ class _EventosTabState extends State<EventosTab> {
           const SizedBox(height: 30),
           Expanded(
             child: isLoading
-                ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
+                ? Center(
+                    child: CircularProgressIndicator(
+                        color: Theme.of(context).primaryColor))
                 : eventos.isEmpty
                     ? Center(
-                        child: Text("Nenhum evento encontrado.\nCrie seu primeiro rolê!",
-                            textAlign: TextAlign.center, style: TextStyle(color: subtitleColor)),
+                        child: Text(
+                            "Nenhum evento encontrado.\nCrie seu primeiro rolê!",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: subtitleColor)),
                       )
                     : GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 600,
                           mainAxisSpacing: 20,
                           crossAxisSpacing: 20,
                           mainAxisExtent: 430,
                         ),
                         itemCount: eventos.length,
-                        itemBuilder: (context, index) => _buildEventoCard(eventos[index]),
+                        itemBuilder: (context, index) =>
+                            _buildEventoCard(eventos[index]),
                       ),
           ),
         ],
@@ -470,14 +484,16 @@ class _EventosTabState extends State<EventosTab> {
   Widget _buildEventoCard(Map evento) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = Theme.of(context).cardColor;
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
     final textColor = isDark ? Colors.white : Colors.black;
 
     String dataDisplay = evento['data_evento'] ?? '--/--/----';
     if (dataDisplay.contains('T')) {
       try {
         final d = DateTime.parse(dataDisplay);
-        dataDisplay = "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+        dataDisplay =
+            "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
       } catch (_) {}
     }
 
@@ -494,20 +510,23 @@ class _EventosTabState extends State<EventosTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16), topRight: Radius.circular(16)),
               child: SizedBox(
                 width: double.infinity,
                 height: 230,
-                child: evento['imagem'] != null && evento['imagem'].toString().isNotEmpty
+                child: evento['imagem'] != null &&
+                        evento['imagem'].toString().isNotEmpty
                     ? Image.network(
                         evento['imagem'],
                         fit: BoxFit.cover,
                         // --- OTIMIZAÇÃO DE MEMÓRIA DA IMAGEM ---
-                        cacheWidth: 800, 
+                        cacheWidth: 800,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: const Color(0xFF050505),
                           alignment: Alignment.center,
-                          child: const Icon(LucideIcons.image, color: Colors.grey, size: 40),
+                          child: const Icon(LucideIcons.image,
+                              color: Colors.grey, size: 40),
                         ),
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -549,15 +568,20 @@ class _EventosTabState extends State<EventosTab> {
                           evento['nome'] ?? 'Sem Nome',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: textColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(LucideIcons.pencil, size: 14),
-                        onPressed: () => _abrirFormulario(evento: Map<String, dynamic>.from(evento)),
+                        onPressed: () => _abrirFormulario(
+                            evento: Map<String, dynamic>.from(evento)),
                       ),
                       IconButton(
-                        icon: const Icon(LucideIcons.trash2, size: 14, color: Colors.red),
+                        icon: const Icon(LucideIcons.trash2,
+                            size: 14, color: Colors.red),
                         onPressed: () => _deletarEvento(evento['id']),
                       ),
                     ],
@@ -565,29 +589,35 @@ class _EventosTabState extends State<EventosTab> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(LucideIcons.mapPin, size: 14, color: Color(0xFFB30000)),
+                      const Icon(LucideIcons.mapPin,
+                          size: 14, color: Color(0xFFB30000)),
                       const SizedBox(width: 6),
-                      Expanded(child: Text(evento['local'] ?? 'Sem local', overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                          child: Text(evento['local'] ?? 'Sem local',
+                              overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(LucideIcons.calendar, size: 14, color: Color(0xFFB30000)),
+                      const Icon(LucideIcons.calendar,
+                          size: 14, color: Color(0xFFB30000)),
                       const SizedBox(width: 6),
                       Text(dataDisplay),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       "R\$ ${evento['valor_passagem'] ?? '0.0'}",
-                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: Colors.green, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -604,7 +634,8 @@ class _EventosTabState extends State<EventosTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final cardColor = Theme.of(context).cardColor;
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
 
     final bool isEditing = eventoSelecionado != null;
 
@@ -616,11 +647,16 @@ class _EventosTabState extends State<EventosTab> {
         children: [
           Row(
             children: [
-              IconButton(icon: Icon(LucideIcons.arrowLeft, color: textColor), onPressed: _voltarParaEventos),
+              IconButton(
+                  icon: Icon(LucideIcons.arrowLeft, color: textColor),
+                  onPressed: _voltarParaEventos),
               const SizedBox(width: 10),
               Text(
                 isEditing ? "Editar Evento" : "Novo Evento",
-                style: TextStyle(fontSize: isMobile ? 24 : 32, fontWeight: FontWeight.w800, color: textColor),
+                style: TextStyle(
+                    fontSize: isMobile ? 24 : 32,
+                    fontWeight: FontWeight.w800,
+                    color: textColor),
               ),
             ],
           ),
@@ -643,28 +679,39 @@ class _EventosTabState extends State<EventosTab> {
                       TextFormField(
                         controller: _nomeController,
                         style: TextStyle(color: textColor),
-                        decoration: _buildInputDecoration("Nome do Evento (Ex: BGS 2026)", LucideIcons.type),
-                        validator: (value) => value == null || value.isEmpty ? 'Informe o nome do evento' : null,
+                        decoration: _buildInputDecoration(
+                            "Nome do Evento (Ex: BGS 2026)", LucideIcons.type),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Informe o nome do evento'
+                            : null,
                       ),
                       const SizedBox(height: 20),
                       DropdownButtonFormField<int>(
                         value: categoriaSelecionada,
                         dropdownColor: cardColor,
                         style: TextStyle(color: textColor),
-                        decoration: _buildInputDecoration("Categoria", LucideIcons.tag),
+                        decoration:
+                            _buildInputDecoration("Categoria", LucideIcons.tag),
                         items: categorias.map<DropdownMenuItem<int>>((c) {
-                          return DropdownMenuItem(value: c['id'] as int, child: Text(c['nome'] ?? ''));
+                          return DropdownMenuItem(
+                              value: c['id'] as int,
+                              child: Text(c['nome'] ?? ''));
                         }).toList(),
-                        onChanged: (value) => setState(() => categoriaSelecionada = value),
-                        validator: (value) => value == null ? 'Selecione uma categoria' : null,
+                        onChanged: (value) =>
+                            setState(() => categoriaSelecionada = value),
+                        validator: (value) =>
+                            value == null ? 'Selecione uma categoria' : null,
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _dataController,
                         readOnly: true,
                         style: TextStyle(color: textColor),
-                        decoration: _buildInputDecoration("Data do Evento", LucideIcons.calendar),
-                        validator: (value) => value == null || value.isEmpty ? 'Informe a data' : null,
+                        decoration: _buildInputDecoration(
+                            "Data do Evento", LucideIcons.calendar),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Informe a data'
+                            : null,
                         onTap: () async {
                           final dataSelecionada = await showDatePicker(
                             context: context,
@@ -684,16 +731,24 @@ class _EventosTabState extends State<EventosTab> {
                       TextFormField(
                         controller: _localController,
                         style: TextStyle(color: textColor),
-                        decoration: _buildInputDecoration("Local do Evento", LucideIcons.mapPin),
-                        validator: (value) => value == null || value.isEmpty ? 'Informe o local' : null,
+                        decoration: _buildInputDecoration(
+                            "Local do Evento", LucideIcons.mapPin),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Informe o local'
+                            : null,
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _valorController,
                         style: TextStyle(color: textColor),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: _buildInputDecoration("Valor da Passagem (Ex: 150.00)", LucideIcons.dollarSign),
-                        validator: (value) => value == null || value.isEmpty ? 'Informe o valor' : null,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: _buildInputDecoration(
+                            "Valor da Passagem (Ex: 150.00)",
+                            LucideIcons.dollarSign),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Informe o valor'
+                            : null,
                       ),
                       const SizedBox(height: 40),
                       SizedBox(
@@ -702,12 +757,17 @@ class _EventosTabState extends State<EventosTab> {
                           onPressed: isSaving ? null : _salvarEvento,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFB30000),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           child: isSaving
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
                               : const Text("SALVAR EVENTO",
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white)),
                         ),
                       ),
                     ],
@@ -728,8 +788,11 @@ class _EventosTabState extends State<EventosTab> {
       labelStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
       prefixIcon: Icon(icon, color: isDark ? Colors.white54 : Colors.black54),
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      fillColor: isDark
+          ? Colors.white.withOpacity(0.02)
+          : Colors.black.withOpacity(0.02),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFB30000), width: 2),
@@ -750,12 +813,17 @@ class _EventosTabState extends State<EventosTab> {
         children: [
           Row(
             children: [
-              IconButton(icon: Icon(LucideIcons.arrowLeft, color: textColor), onPressed: _voltarParaEventos),
+              IconButton(
+                  icon: Icon(LucideIcons.arrowLeft, color: textColor),
+                  onPressed: _voltarParaEventos),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   eventoSelecionado?['nome'] ?? '',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textColor),
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: textColor),
                 ),
               ),
             ],
@@ -786,7 +854,9 @@ class _EventosTabState extends State<EventosTab> {
                           ),
                         )
                       : const Icon(LucideIcons.refreshCw),
-                  label: Text(_isExportingCheers ? 'Atualizando...' : 'Atualizar Cheers'),
+                  label: Text(_isExportingCheers
+                      ? 'Atualizando...'
+                      : 'Atualizar Cheers'),
                 ),
               ),
             ],
@@ -798,7 +868,8 @@ class _EventosTabState extends State<EventosTab> {
               decoration: InputDecoration(
                 labelText: "Buscar cliente",
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onChanged: (value) {
                 _debounce?.cancel();
@@ -817,118 +888,114 @@ class _EventosTabState extends State<EventosTab> {
           const SizedBox(height: 15),
           Expanded(
             child: carregandoClientes
-                ? Center(child: CircularProgressIndicator(color: Theme.of(context).primaryColor))
+                ? Center(
+                    child: CircularProgressIndicator(
+                        color: Theme.of(context).primaryColor))
                 : Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12),
+                      border: Border.all(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black12),
                     ),
                     child: clientes.isEmpty
                         ? Center(
                             child: Text(
                               "Nenhum cliente nesse evento",
-                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                              style: TextStyle(
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black87),
                             ),
                           )
                         : Column(
                             children: [
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width,
-                                    child: SingleChildScrollView(
-                                      child: DataTable(
-                                        horizontalMargin: 30,
-                                        columnSpacing: isMobile ? 25 : 60,
-                                        dataRowMinHeight: 65,
-                                        dataRowMaxHeight: 75,
-                                        headingRowHeight: 60,
-                                        showCheckboxColumn: false,
-                                        headingRowColor: WidgetStateProperty.all(
-                                          isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
-                                        ),
-                                        columns: [
-                                          DataColumn(
-                                              label: Text("NOME",
-                                                  style: TextStyle(
-                                                      color: isDark ? Colors.white70 : Colors.black54,
-                                                      fontWeight: FontWeight.w700))),
-                                          if (!isMobile)
-                                            DataColumn(
-                                                label: Text("EMAIL",
-                                                    style: TextStyle(
-                                                        color: isDark ? Colors.white70 : Colors.black54,
-                                                        fontWeight: FontWeight.w700))),
-                                          DataColumn(
-                                              label: Text("CPF",
-                                                  style: TextStyle(
-                                                      color: isDark ? Colors.white70 : Colors.black54,
-                                                      fontWeight: FontWeight.w700))),
-                                          if (!isMobile)
-                                            DataColumn(
-                                                label: Text("AÇÕES",
-                                                    style: TextStyle(
-                                                        color: isDark ? Colors.white70 : Colors.black54,
-                                                        fontWeight: FontWeight.w700))),
-                                        ],
-                                        rows: clientes.map<DataRow>((cliente) {
-                                          return DataRow(
-                                            onSelectChanged: (selected) {
-                                              if (selected != null) _mostrarDetalhesCliente(cliente);
-                                            },
-                                            cells: [
-                                              DataCell(
-                                                SizedBox(
-                                                  width: 250,
-                                                  child: Text(
-                                                    cliente['nome'] ?? "",
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-                                                  ),
-                                                ),
-                                              ),
-                                              if (!isMobile)
-                                                DataCell(
-                                                  SizedBox(
-                                                    width: 320,
-                                                    child: Text(
-                                                      cliente['email'] ?? "",
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-                                                    ),
-                                                  ),
-                                                ),
-                                              DataCell(Text(cliente['cpf'] ?? "",
-                                                  style: TextStyle(color: isDark ? Colors.white70 : Colors.black87))),
-                                              if (!isMobile)
-                                                DataCell(
-                                                  Container(
-                                                    decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      color: Theme.of(context).primaryColor.withOpacity(0.12),
-                                                    ),
-                                                    child: IconButton(
-                                                      icon: Icon(LucideIcons.pencil,
-                                                          color: Theme.of(context).primaryColor, size: 18),
-                                                      onPressed: () => _mostrarDetalhesCliente(cliente),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          );
-                                        }).toList(),
-                                      ),
+                              Container(
+                                height: 60,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.02)
+                                      : Colors.black.withOpacity(0.02),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: isDark
+                                          ? Colors.white10
+                                          : Colors.black12,
                                     ),
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      "Clientes",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      "$totalClientes clientes",
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: SingleChildScrollView(
+                                    child: DataTable(
+                                  showCheckboxColumn: false,
+                                  headingRowHeight: 0,
+                                  dividerThickness: 0,
+                                  dataRowMinHeight: 70,
+                                  dataRowMaxHeight: 70,
+                                  columns: const [
+                                    DataColumn(
+                                      label: SizedBox.shrink(),
+                                    ),
+                                  ],
+                                  rows: clientes.map<DataRow>((cliente) {
+                                    return DataRow(
+                                      onSelectChanged: (selected) {
+                                        if (selected != null) {
+                                          _mostrarDetalhesCliente(cliente);
+                                        }
+                                      },
+                                      cells: [
+                                        DataCell(
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: Text(
+                                              cliente['nome'] ?? "",
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                )),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
                                 decoration: BoxDecoration(
-                                  border: Border(top: BorderSide(color: isDark ? Colors.white10 : Colors.black12)),
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: isDark
+                                          ? Colors.white10
+                                          : Colors.black12,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -938,32 +1005,50 @@ class _EventosTabState extends State<EventosTab> {
                                       ativo: paginaAtual > 1,
                                       onTap: () async {
                                         setState(() => paginaAtual--);
-                                        await _fetchClientesDoEvento(eventoSelecionado!['id']);
+                                        await _fetchClientesDoEvento(
+                                          eventoSelecionado!['id'],
+                                        );
                                       },
                                     ),
                                     const SizedBox(width: 18),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).primaryColor,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text("$paginaAtual",
-                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        "$paginaAtual",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      child: Text("de $totalPaginas",
-                                          style: TextStyle(
-                                              color: isDark ? Colors.white70 : Colors.black54,
-                                              fontWeight: FontWeight.w600)),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12),
+                                      child: Text(
+                                        "de $totalPaginas",
+                                        style: TextStyle(
+                                          color: isDark
+                                              ? Colors.white70
+                                              : Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
                                     _buildPaginacaoBotao(
                                       icon: LucideIcons.chevronRight,
                                       ativo: paginaAtual < totalPaginas,
                                       onTap: () async {
                                         setState(() => paginaAtual++);
-                                        await _fetchClientesDoEvento(eventoSelecionado!['id']);
+                                        await _fetchClientesDoEvento(
+                                          eventoSelecionado!['id'],
+                                        );
                                       },
                                     ),
                                   ],
@@ -978,7 +1063,10 @@ class _EventosTabState extends State<EventosTab> {
     );
   }
 
-  Widget _buildPaginacaoBotao({required IconData icon, required bool ativo, required VoidCallback onTap}) {
+  Widget _buildPaginacaoBotao(
+      {required IconData icon,
+      required bool ativo,
+      required VoidCallback onTap}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: ativo ? onTap : null,
@@ -987,11 +1075,15 @@ class _EventosTabState extends State<EventosTab> {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03),
+          color: isDark
+              ? Colors.white.withOpacity(0.03)
+              : Colors.black.withOpacity(0.03),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
         ),
-        child: Icon(icon, color: ativo ? (isDark ? Colors.white : Colors.black) : Colors.grey, size: 20),
+        child: Icon(icon,
+            color: ativo ? (isDark ? Colors.white : Colors.black) : Colors.grey,
+            size: 20),
       ),
     );
   }
@@ -999,9 +1091,11 @@ class _EventosTabState extends State<EventosTab> {
 
 class ClienteDetalhesDialog extends StatefulWidget {
   final Map cliente;
-  final Function(String nome, String email, String cpf, String telefone) onSalvar;
+  final Function(String nome, String email, String cpf, String telefone)
+      onSalvar;
 
-  const ClienteDetalhesDialog({super.key, required this.cliente, required this.onSalvar});
+  const ClienteDetalhesDialog(
+      {super.key, required this.cliente, required this.onSalvar});
 
   @override
   State<ClienteDetalhesDialog> createState() => _ClienteDetalhesDialogState();
@@ -1019,9 +1113,11 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
   void initState() {
     super.initState();
     nomeController = TextEditingController(text: widget.cliente['nome'] ?? '');
-    emailController = TextEditingController(text: widget.cliente['email'] ?? '');
+    emailController =
+        TextEditingController(text: widget.cliente['email'] ?? '');
     cpfController = TextEditingController(text: widget.cliente['cpf'] ?? '');
-    telefoneController = TextEditingController(text: widget.cliente['telefone'] ?? '');
+    telefoneController =
+        TextEditingController(text: widget.cliente['telefone'] ?? '');
   }
 
   @override
@@ -1040,9 +1136,21 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
 
     final listaCampos = [
       {'label': "Nome", 'controller': nomeController, 'icon': LucideIcons.user},
-      {'label': "Email", 'controller': emailController, 'icon': LucideIcons.mail},
-      {'label': "CPF", 'controller': cpfController, 'icon': LucideIcons.fileText},
-      {'label': "Telefone", 'controller': telefoneController, 'icon': LucideIcons.phone},
+      {
+        'label': "Email",
+        'controller': emailController,
+        'icon': LucideIcons.mail
+      },
+      {
+        'label': "CPF",
+        'controller': cpfController,
+        'icon': LucideIcons.fileText
+      },
+      {
+        'label': "Telefone",
+        'controller': telefoneController,
+        'icon': LucideIcons.phone
+      },
     ];
 
     return AlertDialog(
@@ -1054,9 +1162,11 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text("Dados do Cliente", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+          Text("Dados do Cliente",
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
           IconButton(
-            icon: Icon(LucideIcons.x, color: isDark ? Colors.white54 : Colors.black54, size: 20),
+            icon: Icon(LucideIcons.x,
+                color: isDark ? Colors.white54 : Colors.black54, size: 20),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -1084,8 +1194,10 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => setState(() => editando = true),
-                        icon: const Icon(LucideIcons.pencil, color: Colors.white),
-                        label: const Text("Editar Dados", style: TextStyle(color: Colors.white)),
+                        icon:
+                            const Icon(LucideIcons.pencil, color: Colors.white),
+                        label: const Text("Editar Dados",
+                            style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 15),
@@ -1098,8 +1210,13 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
                           child: ElevatedButton(
                             onPressed: () => setState(() => editando = false),
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300]),
-                            child: Text("Cancelar", style: TextStyle(color: isDark ? Colors.white : Colors.black)),
+                                backgroundColor: isDark
+                                    ? Colors.grey[800]
+                                    : Colors.grey[300]),
+                            child: Text("Cancelar",
+                                style: TextStyle(
+                                    color:
+                                        isDark ? Colors.white : Colors.black)),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1114,8 +1231,11 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
                               );
                               if (mounted) Navigator.pop(context);
                             },
-                            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
-                            child: const Text("Salvar", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).primaryColor),
+                            child: const Text("Salvar",
+                                style: TextStyle(color: Colors.white)),
                           ),
                         ),
                       ],
@@ -1159,12 +1279,16 @@ class CampoClienteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: subtitleColor, fontSize: 11)),
+                Text(label,
+                    style: TextStyle(color: subtitleColor, fontSize: 11)),
                 const SizedBox(height: 5),
                 if (!editando)
                   Text(
                     controller.text,
-                    style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
                   )
                 else
                   TextField(
@@ -1172,15 +1296,20 @@ class CampoClienteCard extends StatelessWidget {
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      fillColor: isDark
+                          ? Colors.white.withOpacity(0.03)
+                          : Colors.black.withOpacity(0.03),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+                        borderSide: BorderSide(
+                            color: isDark ? Colors.white10 : Colors.black12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                        borderSide:
+                            BorderSide(color: Theme.of(context).primaryColor),
                       ),
                     ),
                   ),
