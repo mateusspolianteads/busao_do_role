@@ -24,6 +24,7 @@ class _EventosTabState extends State<EventosTab> {
   List<dynamic> clientes = [];
 
   bool carregandoClientes = false;
+  bool _isExportingCheers = false;
   bool isLoading = true;
   bool isSaving = false;
 
@@ -282,6 +283,57 @@ class _EventosTabState extends State<EventosTab> {
       if (mounted) {
         setState(() => carregandoClientes = false);
       }
+    }
+  }
+
+  Future<void> _exportarCheers() async {
+    if (eventoSelecionado == null) return;
+
+    final nomeEvento = eventoSelecionado?['nome']?.toString().trim() ?? '';
+    if (nomeEvento.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nome de evento inválido para exportação.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isExportingCheers = true);
+
+    try {
+      final response = await ApiClient.post(
+        '/pedidos/exportar-planilha',
+        {'evento': nomeEvento},
+      );
+
+      if (ApiClient.isSuccess(response)) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final nomeArquivo = data['nome_arquivo'] ?? 'cheers_export.xls';
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Exportação concluída: $nomeArquivo'),
+          backgroundColor: Colors.green,
+        ));
+      } else {
+        final mensagem = ApiClient.getErrorMessage(response);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Falha ao exportar: $mensagem'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erro ao exportar Cheers: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) setState(() => _isExportingCheers = false);
     }
   }
 
@@ -709,10 +761,35 @@ class _EventosTabState extends State<EventosTab> {
             ],
           ),
           const SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: importarPlanilha,
-            icon: const Icon(LucideIcons.fileSpreadsheet),
-            label: const Text("Importar Planilha"),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: importarPlanilha,
+                  icon: const Icon(LucideIcons.fileSpreadsheet),
+                  label: const Text("Importar Planilha"),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: (_isExportingCheers || eventoSelecionado == null)
+                      ? null
+                      : _exportarCheers,
+                  icon: _isExportingCheers
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(LucideIcons.refreshCw),
+                  label: Text(_isExportingCheers ? 'Atualizando...' : 'Atualizar Cheers'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 30),
           Padding(
