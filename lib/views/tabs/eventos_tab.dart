@@ -306,40 +306,279 @@ class _EventosTabState extends State<EventosTab> {
       return;
     }
 
-    setState(() => _isExportingCheers = true);
+    // Variáveis de controle de estado locais do Modal
+    bool exportando = true;
+    bool importando = false;
+    bool importacaoConcluida = false;
+    String? erroMensagem;
+    String? arquivoGerado;
+    String? resumoImportacao;
 
-    try {
-      final response = await ApiClient.post(
-        '/pedidos/exportar-planilha',
-        {'evento': nomeEvento},
-      );
+    // Abre o Modal imediatamente mostrando o loading de exportação
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Impede fechar clicando fora durante o processo crítico
+      builder: (BuildContext dialogContext) {
+        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+        final textColor = isDark ? Colors.white : Colors.black;
 
-      if (ApiClient.isSuccess(response)) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        final nomeArquivo = data['nome_arquivo'] ?? 'cheers_export.xls';
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            // Dispara a requisição de Exportação apenas uma vez quando o modal monta
+            if (exportando && erroMensagem == null && arquivoGerado == null) {
+              () async {
+                try {
+                  final response = await ApiClient.post(
+                    '/pedidos/exportar-planilha',
+                    {'evento': nomeEvento},
+                  );
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Exportação concluída: $nomeArquivo'),
-          backgroundColor: Colors.green,
-        ));
-      } else {
-        final mensagem = ApiClient.getErrorMessage(response);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Falha ao exportar: $mensagem'),
-          backgroundColor: Colors.red,
-        ));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao exportar Cheers: ${e.toString()}'),
-        backgroundColor: Colors.red,
-      ));
-    } finally {
-      if (mounted) setState(() => _isExportingCheers = false);
-    }
+                  if (ApiClient.isSuccess(response)) {
+                    final data = json.decode(utf8.decode(response.bodyBytes));
+                    setModalState(() {
+                      exportando = false;
+                      arquivoGerado =
+                          data['nome_arquivo'] ?? 'cheers_export.xls';
+                    });
+                  } else {
+                    final mensagem = ApiClient.getErrorMessage(response);
+                    setModalState(() {
+                      exportando = false;
+                      erroMensagem = mensagem;
+                    });
+                  }
+                } catch (e) {
+                  setModalState(() {
+                    exportando = false;
+                    erroMensagem = e.toString();
+                  });
+                }
+              }();
+            }
+
+            return AlertDialog(
+              backgroundColor: Theme.of(dialogContext).cardColor,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                exportando
+                    ? "Exportando Cheers"
+                    : importando
+                        ? "Importando Planilha"
+                        : importacaoConcluida
+                            ? "Importação Concluída"
+                            : (erroMensagem != null
+                                ? "Falha no Processo"
+                                : "Exportação Concluída"),
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              content: SizedBox(
+                width: 320,
+                // Mantém o loading centralizado verticalmente nas fases de progresso
+                height: (exportando || importando) ? 180 : null,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (exportando) ...[
+                      CircularProgressIndicator(
+                          color: Theme.of(dialogContext).primaryColor),
+                      const SizedBox(height: 24),
+                      Text(
+                        "Gerando planilha, por favor aguarde...",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: textColor),
+                      ),
+                    ] else if (importando) ...[
+                      const CircularProgressIndicator(color: Colors.green),
+                      const SizedBox(height: 24),
+                      Text(
+                        "Baixando e processando planilha no banco de dados...",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: textColor),
+                      ),
+                    ] else if (erroMensagem != null) ...[
+                      const Icon(LucideIcons.alertTriangle,
+                          color: Colors.red, size: 48),
+                      const SizedBox(height: 16),
+                      Text("Erro: $erroMensagem",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red)),
+                    ] else if (importacaoConcluida) ...[
+                      const Icon(LucideIcons.checkCircle2,
+                          color: Colors.green, size: 54),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Sucesso!",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            fontSize: 18),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        resumoImportacao ??
+                            "Os participantes deste evento foram sincronizados.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: textColor.withOpacity(0.7), fontSize: 13),
+                      ),
+                    ] else ...[
+                      const Icon(LucideIcons.checkCircle2,
+                          color: Colors.green, size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Arquivo gerado com sucesso!",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: textColor),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white10 : Colors.black12,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(LucideIcons.fileSpreadsheet,
+                                color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                arquivoGerado ?? '',
+                                style:
+                                    TextStyle(color: textColor, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actionsPadding:
+                  const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+              actions: [
+                // Só exibe botões se não estiver no meio de uma operação de rede
+                if (!exportando && !importando) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: Text("Fechar",
+                              style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54)),
+                        ),
+                      ),
+                      // O botão de Importar direto só aparece logo após a exportação com sucesso
+                      if (erroMensagem == null && !importacaoConcluida) ...[
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () async {
+                              setModalState(() {
+                                importando = true;
+                              });
+
+                              try {
+                                // 1. Baixa o arquivo do backend (equivalente ao fetch do JS)
+                                final downloadResponse = await ApiClient.post(
+                                  '/pedidos/baixar-arquivo-exportado',
+                                  {'nome_arquivo': arquivoGerado},
+                                );
+
+                                if (ApiClient.isSuccess(downloadResponse)) {
+                                  final bytes = downloadResponse
+                                      .bodyBytes; // Obtém os bytes brutos
+
+                                  // 2. Monta o FormData igual ao FilePicker, mas passando os bytes recebidos
+                                  FormData formData = FormData.fromMap({
+                                    "file": MultipartFile.fromBytes(bytes,
+                                        filename: arquivoGerado),
+                                    "evento_id": eventoSelecionado!['id'],
+                                  });
+
+                                  // 3. Dispara a importação da planilha no banco
+                                  final importResponse = await DioClient.dio
+                                      .post("/pedidos/importar-planilha",
+                                          data: formData);
+
+                                  if (importResponse.statusCode == 201 ||
+                                      importResponse.statusCode == 200) {
+                                    // Atualiza os dados da tabela na tela de fundo do Flutter
+                                    setState(() => paginaAtual = 1);
+                                    await _fetchClientesDoEvento(
+                                        eventoSelecionado!['id']);
+
+                                    // Mapeia o resumo de resposta se o backend devolver dados
+                                    String? resumo;
+                                    if (importResponse.data != null &&
+                                        importResponse.data is Map) {
+                                      final totalNovos = importResponse
+                                              .data['total_clientes_novos'] ??
+                                          0;
+                                      final totalPedidos = importResponse
+                                              .data['total_pedidos_criados'] ??
+                                          0;
+                                      resumo =
+                                          "$totalNovos novos clientes e $totalPedidos pedidos integrados.";
+                                    }
+
+                                    setModalState(() {
+                                      importando = false;
+                                      importacaoConcluida = true;
+                                      resumoImportacao = resumo;
+                                    });
+                                  } else {
+                                    setModalState(() {
+                                      importando = false;
+                                      erroMensagem =
+                                          "Erro ao processar planilha no servidor.";
+                                    });
+                                  }
+                                } else {
+                                  setModalState(() {
+                                    importando = false;
+                                    erroMensagem =
+                                        "Falha ao baixar o arquivo exportado.";
+                                  });
+                                }
+                              } catch (e) {
+                                setModalState(() {
+                                  importando = false;
+                                  erroMensagem =
+                                      "Erro na importação automática: ${e.toString()}";
+                                });
+                              }
+                            },
+                            icon: const Icon(LucideIcons.fileInput,
+                                color: Colors.white, size: 16),
+                            label: const Text("Importar",
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ],
+                  )
+                ]
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _abrirFormulario({Map<String, dynamic>? evento}) {
@@ -803,7 +1042,8 @@ class _EventosTabState extends State<EventosTab> {
   Widget _buildTelaDoEventoDetalhado(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 900;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
+    final textColor =
+        isDark ? const Color.fromARGB(255, 255, 255, 255) : Colors.black;
 
     return Padding(
       key: const ValueKey('TelaDetalhesEvento'),
@@ -836,27 +1076,34 @@ class _EventosTabState extends State<EventosTab> {
                   onPressed: importarPlanilha,
                   icon: const Icon(LucideIcons.fileSpreadsheet),
                   label: const Text("Importar Planilha"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context)
+                        .primaryColor, // <-- Cor primária do app
+                    foregroundColor: isDark
+                        ? Colors.white
+                        : Colors.black, // <-- Branco no Dark, Preto no Light
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: (_isExportingCheers || eventoSelecionado == null)
-                      ? null
-                      : _exportarCheers,
-                  icon: _isExportingCheers
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(LucideIcons.refreshCw),
-                  label: Text(_isExportingCheers
-                      ? 'Atualizando...'
-                      : 'Atualizar Cheers'),
+                  onPressed: eventoSelecionado == null ? null : _exportarCheers,
+                  icon: const Icon(LucideIcons.refreshCw),
+                  label: const Text('Atualizar Cheers'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context)
+                        .primaryColor, // <-- Cor primária do app
+                    foregroundColor: isDark
+                        ? Colors.white
+                        : Colors.black, // <-- Branco no Dark, Preto no Light
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],
