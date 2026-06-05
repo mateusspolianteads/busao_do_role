@@ -325,7 +325,7 @@ class _EventosTabState extends State<EventosTab> {
       }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 3));
 
         setState(() {
           paginaAtual = 1;
@@ -333,6 +333,10 @@ class _EventosTabState extends State<EventosTab> {
         });
 
         await _fetchClientesDoEvento(eventoSelecionado!['id']);
+
+        if (mounted) {
+          setState(() {});
+        }
 
         if (!mounted) return;
 
