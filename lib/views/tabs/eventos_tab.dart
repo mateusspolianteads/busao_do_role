@@ -95,6 +95,10 @@ class _EventosTabState extends State<EventosTab> {
         } else {
           eventos = [];
         }
+
+        // === ADICIONE ESTA LINHA AQUI ===
+        // Ordena os eventos colocando o maior ID (mais recente) no topo
+        eventos.sort((a, b) => b['id'].compareTo(a['id']));
       });
     } catch (e, s) {
       debugPrint("ERRO FETCH EVENTOS: $e\n$s");
@@ -108,15 +112,33 @@ class _EventosTabState extends State<EventosTab> {
     }
   }
 
+  String _descobrirNomeDaCategoria(dynamic categoriaId) {
+    if (categoriaId == null) return "Sem Categoria";
+
+    // Procura na tua lista de categorias a linha que tem o mesmo ID
+    final categoriaEncontrada = categorias.firstWhere(
+      (c) => c['id'].toString() == categoriaId.toString(),
+      orElse: () => null,
+    );
+
+    // Se encontrou, devolve o 'nome' (texto). Se não, devolve 'Sem Categoria'
+    return categoriaEncontrada != null
+        ? (categoriaEncontrada['nome'] ?? "Sem Categoria")
+        : "Sem Categoria";
+  }
+
   Future<void> _fetchCategorias() async {
     try {
+      // Aponta direto para o prefixo /categorias/listar da sua nova API
       final response = await ApiClient.request("/categorias/listar");
-      if (response.statusCode == 200 && mounted) {
+      if (response.statusCode == 200) {
         setState(() {
           categorias = jsonDecode(response.body);
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Erro ao buscar categorias: $e");
+    }
   }
 
   Future<void> _salvarEvento() async {
@@ -207,36 +229,135 @@ class _EventosTabState extends State<EventosTab> {
   }
 
   Future<void> importarPlanilha() async {
+    FilePickerResult? result;
+
     try {
-      final result = await FilePicker.pickFiles(
+      // 1. Abre o seletor de arquivos primeiro (para não abrir o modal antes da hora)
+      result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
+        withData: true,
       );
+    } catch (e) {
+      debugPrint("Erro ao selecionar arquivo: $e");
+      return;
+    }
 
-      if (result == null) return;
+    // Se o usuário fechou o seletor sem escolher nenhum arquivo, interrompe aqui
+    if (result == null) return;
+
+    // Controle para fechar o modal com segurança no lugar certo
+    bool modalAberto = false;
+
+    try {
+      // 2. Abre o Modal de Loading imediatamente após a escolha do arquivo
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Impede o usuário de fechar clicando fora
+        builder: (BuildContext dialogContext) {
+          final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+          final textColor = isDark ? Colors.white : Colors.black;
+
+          return AlertDialog(
+            backgroundColor: Theme.of(dialogContext).cardColor,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: SizedBox(
+              width: 280,
+              height: 140,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                      color: Theme.of(dialogContext).primaryColor),
+                  const SizedBox(height: 24),
+                  Text(
+                    "Importando planilha...",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: textColor, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Processando dados no servidor...",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: textColor.withOpacity(0.6), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+      modalAberto = true;
+
+      // 3. Prepara o arquivo para envio
       final file = result.files.first;
+      MultipartFile multipartFile;
+
+      if (file.bytes != null) {
+        multipartFile =
+            MultipartFile.fromBytes(file.bytes!, filename: file.name);
+      } else if (file.path != null) {
+        multipartFile =
+            await MultipartFile.fromFile(file.path!, filename: file.name);
+      } else {
+        throw Exception(
+            "Não foi possível ler os dados do arquivo selecionado.");
+      }
 
       FormData formData = FormData.fromMap({
-        "file": MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        "file": multipartFile,
         "evento_id": eventoSelecionado!['id'],
       });
 
+      // 4. Envia para o servidor via Dio
       final response = await DioClient.dio
           .post("/pedidos/importar-planilha", data: formData);
 
-      if (response.statusCode == 201) {
-        setState(() => paginaAtual = 1);
+      // 5. Fecha o modal de loading assim que a resposta chegar
+      if (modalAberto && mounted) {
+        Navigator.pop(context);
+        modalAberto = false;
+      }
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        await Future.delayed(const Duration(seconds: 1));
+
+        setState(() {
+          paginaAtual = 1;
+          search = "";
+        });
+
         await _fetchClientesDoEvento(eventoSelecionado!['id']);
 
         if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Planilha importada com sucesso")),
+          const SnackBar(
+            content: Text("Planilha importada com sucesso!"),
+            backgroundColor: Colors.green,
+          ),
         );
+      } else {
+        throw Exception("Status do servidor: ${response.statusCode}");
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Garante que o modal fecha se houver alguma falha na requisição de rede
+      if (modalAberto && mounted) {
+        Navigator.pop(context);
+      }
+
+      debugPrint("ERRO CRÍTICO NA IMPORTAÇÃO: $e\n$stackTrace");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao importar planilha")),
+        SnackBar(
+          content: Text("Erro ao importar planilha: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -329,12 +450,16 @@ class _EventosTabState extends State<EventosTab> {
             if (exportando && erroMensagem == null && arquivoGerado == null) {
               () async {
                 try {
-                  final response = await ApiClient.post(
+                  // CORREÇÃO: Utilizando o método .request padrão do teu ApiClient
+                  final response = await ApiClient.request(
                     '/pedidos/exportar-planilha',
-                    {'evento': nomeEvento},
+                    method: "POST",
+                    body: {'evento': nomeEvento},
                   );
 
-                  if (ApiClient.isSuccess(response)) {
+                  // CORREÇÃO: Verificação manual do StatusCode igual ao resto do teu código
+                  if (response.statusCode == 200 ||
+                      response.statusCode == 201) {
                     final data = json.decode(utf8.decode(response.bodyBytes));
                     setModalState(() {
                       exportando = false;
@@ -342,7 +467,26 @@ class _EventosTabState extends State<EventosTab> {
                           data['nome_arquivo'] ?? 'cheers_export.xls';
                     });
                   } else {
-                    final mensagem = ApiClient.getErrorMessage(response);
+                    // TRATAMENTO DO ERRO DO FASTAPI:
+                    String mensagem = "Erro desconhecido no servidor";
+                    try {
+                      final dadosErro =
+                          json.decode(utf8.decode(response.bodyBytes));
+                      if (dadosErro is Map && dadosErro['detail'] != null) {
+                        mensagem = dadosErro['detail'].toString();
+                      } else {
+                        mensagem = response.body;
+                      }
+                    } catch (_) {
+                      mensagem = response.body;
+                    }
+
+                    // Se a mensagem contiver o aviso do teu robô Python:
+                    if (mensagem.contains("não encontrado na listagem")) {
+                      mensagem =
+                          "Este evento não foi encontrado na Cheers. Verifique se o nome está digitado corretamente.";
+                    }
+
                     setModalState(() {
                       exportando = false;
                       erroMensagem = mensagem;
@@ -493,13 +637,17 @@ class _EventosTabState extends State<EventosTab> {
                               });
 
                               try {
-                                // 1. Baixa o arquivo do backend (equivalente ao fetch do JS)
-                                final downloadResponse = await ApiClient.post(
+                                // 1. Baixa o arquivo do backend (CORREÇÃO: Utilizando .request com POST)
+                                final downloadResponse =
+                                    await ApiClient.request(
                                   '/pedidos/baixar-arquivo-exportado',
-                                  {'nome_arquivo': arquivoGerado},
+                                  method: "POST",
+                                  body: {'nome_arquivo': arquivoGerado},
                                 );
 
-                                if (ApiClient.isSuccess(downloadResponse)) {
+                                // CORREÇÃO: Verificação manual do StatusCode
+                                if (downloadResponse.statusCode == 200 ||
+                                    downloadResponse.statusCode == 201) {
                                   final bytes = downloadResponse
                                       .bodyBytes; // Obtém os bytes brutos
 
@@ -754,45 +902,88 @@ class _EventosTabState extends State<EventosTab> {
               child: SizedBox(
                 width: double.infinity,
                 height: 230,
-                child: evento['imagem'] != null &&
-                        evento['imagem'].toString().isNotEmpty
-                    ? Image.network(
-                        evento['imagem'],
-                        fit: BoxFit.cover,
-                        // --- OTIMIZAÇÃO DE MEMÓRIA DA IMAGEM ---
-                        cacheWidth: 800,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFF050505),
-                          alignment: Alignment.center,
-                          child: const Icon(LucideIcons.image,
-                              color: Colors.grey, size: 40),
-                        ),
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: isDark ? Colors.black26 : Colors.grey[200],
-                            alignment: Alignment.center,
-                            child: const SizedBox(
-                              width: 30,
-                              height: 30,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                child: Stack(
+                  // <-- Usamos o Stack para sobrepor elementos
+                  children: [
+                    // 1. A Imagem ocupa todo o fundo do topo
+                    Positioned.fill(
+                      child: evento['imagem'] != null &&
+                              evento['imagem'].toString().isNotEmpty
+                          ? Image.network(
+                              evento['imagem'],
+                              fit: BoxFit.cover,
+                              cacheWidth: 800,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: const Color(0xFF050505),
+                                alignment: Alignment.center,
+                                child: const Icon(LucideIcons.image,
+                                    color: Colors.grey, size: 40),
+                              ),
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: isDark
+                                      ? Colors.black26
+                                      : Colors.grey[200],
+                                  alignment: Alignment.center,
+                                  child: const SizedBox(
+                                    width: 30,
+                                    height: 30,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              color: const Color(0xFF050505),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                "MEU EVENTO",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 3,
+                                  color: Color(0xFFC41313),
+                                ),
+                              ),
                             ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: const Color(0xFF050505),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "MEU EVENTO",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 3,
-                            color: Color(0xFFC41313),
+                    ),
+                    // 2. A Tag posicionada no canto superior esquerdo da imagem
+                    // 2. A Tag posicionada no canto superior esquerdo da imagem
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(131, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.25),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _descobrirNomeDaCategoria(evento['categoria_id']),
+                          style: const TextStyle(
+                            // 👇 ALTERA A COR DO TEXTO AQUI 👇
+                            color: Colors
+                                .white, // Mantém branco ou muda para Colors.black se o fundo for muito claro
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
+                    ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -1120,13 +1311,14 @@ class _EventosTabState extends State<EventosTab> {
               ),
               onChanged: (value) {
                 _debounce?.cancel();
-                _debounce = Timer(const Duration(milliseconds: 350), () {
+                _debounce = Timer(const Duration(milliseconds: 350), () async {
                   if (mounted) {
                     setState(() {
-                      search = value;
                       paginaAtual = 1;
+                      search = value;
                     });
-                    _fetchClientesDoEvento(eventoSelecionado!['id']);
+
+                    await _fetchClientesDoEvento(eventoSelecionado!['id']);
                   }
                 });
               },
