@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiClient {
-  static const String baseUrl = "http://localhost:8000";
+  static const String baseUrl = "https://busaorole.fwt.app.br";
 
   static Future<http.Response> request(
     String endpoint, {
