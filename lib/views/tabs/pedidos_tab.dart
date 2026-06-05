@@ -357,8 +357,14 @@ class InitialState extends StatelessWidget {
         children: [
           Icon(LucideIcons.mousePointerClick, size: 60, color: iconColor),
           const SizedBox(height: 16),
-          Text("Selecione um evento acima para carregar os pedidos",
-              style: TextStyle(color: emptyTextColor, fontSize: 16)),
+          Text(
+            "Selecione um evento acima para carregar os pedidos",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: emptyTextColor,
+              fontSize: 16,
+            ),
+          ),
         ],
       ),
     );
