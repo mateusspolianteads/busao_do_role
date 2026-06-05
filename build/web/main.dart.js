@@ -48032,7 +48032,7 @@ if(f.a.a!==m.w.a.a){m.c.a9(t.J).f.fc(B.aaF)
 s=1
 break}m.Z(new A.aw5(m))
 p=4
-l=A.fq("https://busao-api.onrender.com/usuarios/cadastrar")
+l=A.fq("https://busaorole.fwt.app.br/usuarios/cadastrar")
 e=t.N
 d=A.ak(["Content-Type","application/json"],e,e)
 s=7
@@ -48121,7 +48121,7 @@ if(J.cn(d)===0){m.c.a9(t.J).f.fc(B.aaP)
 s=1
 break}m.Z(new A.ayx(m))
 p=4
-l=A.fq("https://busao-api.onrender.com/usuarios/esqueci-senha")
+l=A.fq("https://busaorole.fwt.app.br/usuarios/esqueci-senha")
 i=t.N
 h=A.ak(["Content-Type","application/json"],i,i)
 s=7
@@ -114231,7 +114231,7 @@ r($,"bfM","bD",()=>$.aNc())
 r($,"bfh","aJy",()=>{A.b45()
 return B.LR})
 s($,"bez","aXw",()=>new A.amP())
-s($,"bbp","aJm",()=>{var q=A.aZ6("https://busao-api.onrender.com",A.ak(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aUL(),o=new A.R3(A.b([B.M4],A.av("z<hr?>")))
+s($,"bbp","aJm",()=>{var q=A.aZ6("https://busaorole.fwt.app.br",A.ak(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aUL(),o=new A.R3(A.b([B.M4],A.av("z<hr?>")))
 o.a_(o,B.Zt)
 o=new A.ac9(p,o,A.aUL(),new A.afO(51200),!1)
 o.a0o$=q
