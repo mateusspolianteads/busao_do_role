@@ -98,7 +98,15 @@ class _EventosTabState extends State<EventosTab> {
 
         // === ADICIONE ESTA LINHA AQUI ===
         // Ordena os eventos colocando o maior ID (mais recente) no topo
-        eventos.sort((a, b) => b['id'].compareTo(a['id']));
+        eventos.sort((a, b) {
+          try {
+            final dataA = DateTime.parse(a['data_evento']);
+            final dataB = DateTime.parse(b['data_evento']);
+            return dataB.compareTo(dataA);
+          } catch (_) {
+            return 0;
+          }
+        });
       });
     } catch (e, s) {
       debugPrint("ERRO FETCH EVENTOS: $e\n$s");
@@ -888,6 +896,17 @@ class _EventosTabState extends State<EventosTab> {
       } catch (_) {}
     }
 
+    DateTime? dataEvento;
+
+    try {
+      dataEvento = DateTime.parse(evento['data_evento']);
+    } catch (_) {}
+
+    final bool eventoPassado =
+        dataEvento != null && dataEvento.isBefore(DateTime.now());
+
+    final Color corData = eventoPassado ? Colors.red : Colors.green;
+
     return InkWell(
       onTap: () => _abrirDetalhesEvento(Map<String, dynamic>.from(evento)),
       borderRadius: BorderRadius.circular(16),
@@ -1037,7 +1056,13 @@ class _EventosTabState extends State<EventosTab> {
                       const Icon(LucideIcons.calendar,
                           size: 14, color: Color(0xFFB30000)),
                       const SizedBox(width: 6),
-                      Text(dataDisplay),
+                      Text(
+                        dataDisplay,
+                        style: TextStyle(
+                          color: corData,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
