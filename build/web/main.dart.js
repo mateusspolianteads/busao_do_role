@@ -48545,22 +48545,23 @@ aln(a){var s=null,r=this.c
 r.toString
 A.Lj(s,s,!0,s,new A.azk(this,a),r,s,!0,t.z)},
 kI(a){return this.aeX(a)},
-aeX(a){var s=0,r=A.I(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h
+aeX(a){var s=0,r=A.I(t.H),q=1,p=[],o=[],n=this,m,l,k,j,i,h,g
 var $async$kI=A.J(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:n.Z(new A.azb(n))
 q=3
+m=Date.now()
 s=6
-return A.B(A.eV("/clientes/evento/"+a+"?pagina="+n.as+"&limite=10&search="+n.ay,null,"GET"),$async$kI)
-case 6:m=c
-if(m.b===200){j=m
-l=B.aj.kc(A.k6(A.k4(j.e)).cM(j.w),null)
-if(n.c!=null)n.Z(new A.azc(n,l))}o.push(5)
+return A.B(A.eV("/clientes/evento/"+a+"?pagina="+n.as+"&limite=10&search="+n.ay+"&_cb="+A.j(m),null,"GET"),$async$kI)
+case 6:l=c
+if(l.b===200){i=l
+k=B.aj.kc(A.k6(A.k4(i.e)).cM(i.w),null)
+if(n.c!=null)n.Z(new A.azc(n,k))}o.push(5)
 s=4
 break
 case 3:q=2
-h=p.pop()
-k=A.ag(h)
-A.px().$1(J.c7(k))
+g=p.pop()
+j=A.ag(g)
+A.px().$1(J.c7(j))
 o.push(5)
 s=4
 break

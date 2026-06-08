@@ -529,8 +529,12 @@ class _EventosTabState extends State<EventosTab> {
     });
 
     try {
+      // ✨ EVITA CACHE NA WEB: Cria um número único baseado no tempo atual
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      // Adicionamos &_cb=$timestamp no final do link
       final response = await ApiClient.get(
-        "/clientes/evento/$eventoId?pagina=$paginaAtual&limite=$clientesPorPagina&search=$search",
+        "/clientes/evento/$eventoId?pagina=$paginaAtual&limite=$clientesPorPagina&search=$search&_cb=$timestamp",
       );
 
       if (response.statusCode == 200) {
