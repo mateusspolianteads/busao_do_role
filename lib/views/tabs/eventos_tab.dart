@@ -285,21 +285,22 @@ class _EventosTabState extends State<EventosTab> {
   }
 
   Future<void> _excluirPassageirosDoEvento() async {
-    // Confirmar ação com o usuário
-    bool? confirmar = await showDialog<bool>(
+    final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Confirmar exclusão dos passageiros"),
+        title: const Text("Confirmar exclusão"),
         content: const Text(
-            "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita."),
+          "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita.",
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancelar")),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Excluir", style: TextStyle(color: Colors.white)),
+            child: const Text("Excluir"),
           ),
         ],
       ),
@@ -309,43 +310,53 @@ class _EventosTabState extends State<EventosTab> {
 
     try {
       final response = await ApiClient.request(
-        "/pedidos/deletar-do-evento/${eventoSelecionado!['id']}",
+        "/pedidos/evento/${eventoSelecionado!['id']}",
         method: "DELETE",
       );
 
       if (response.statusCode == 200) {
         if (mounted) {
+          setState(() {
+            paginaAtual = 1;
+            search = "";
+            clientes = [];
+            totalClientes = 0;
+          });
+
+          await _fetchClientesDoEvento(eventoSelecionado!['id']);
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text("Passageiros removidos com sucesso!"),
-                backgroundColor: Colors.green),
+              content: Text("Passageiros removidos com sucesso!"),
+              backgroundColor: Colors.green,
+            ),
           );
-          setState(() => paginaAtual = 1);
-          await _fetchClientesDoEvento(eventoSelecionado!['id']);
         }
-      } else {
-        // --- AJUSTE AQUI: Captura o erro do FastAPI ---
-        String mensagemErro = "Erro ao excluir passageiros.";
-        try {
-          final dados = jsonDecode(response.body);
-          // O FastAPI envia o erro no campo 'detail'
-          if (dados is Map && dados['detail'] != null) {
-            mensagemErro = dados['detail'].toString();
-          }
-        } catch (_) {
-          // Se não conseguir decodificar o JSON, mantém a mensagem padrão
-        }
-        throw Exception(mensagemErro);
+        return; // ✨ A MÁGICA ACONTECE AQUI: Para a execução se deu tudo certo!
       }
-    } catch (e) {
-      if (mounted) {
-        // Remove o prefixo "Exception: " para exibir apenas a mensagem do backend
-        String textoExibicao = e.toString().replaceFirst('Exception: ', '');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(textoExibicao), backgroundColor: Colors.red),
-        );
-      }
+      // Se chegou aqui, é porque o statusCode NÃO foi 200
+      String mensagem = "Erro ao excluir passageiros.";
+
+      try {
+        final dados = jsonDecode(response.body);
+        if (dados is Map && dados['detail'] != null) {
+          mensagem = dados['detail'].toString();
+        }
+      } catch (_) {}
+
+      throw Exception(mensagem);
+    } catch (e) {
+      if (!mounted) return;
+
+      String texto = e.toString().replaceFirst("Exception: ", "");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(texto),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -512,7 +523,10 @@ class _EventosTabState extends State<EventosTab> {
   }
 
   Future<void> _fetchClientesDoEvento(int eventoId) async {
-    setState(() => carregandoClientes = true);
+    setState(() {
+      carregandoClientes = true;
+      clientes = [];
+    });
 
     try {
       final response = await ApiClient.get(
