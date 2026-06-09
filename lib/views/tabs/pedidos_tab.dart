@@ -393,54 +393,84 @@ class _PedidosTabState extends State<PedidosTab> {
                   ),
                   Divider(color: borderColor, height: 1),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 8,
                       children: [
                         IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.first_page, size: 18),
                           onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
                               ? () => _fetchPedidos(pagina: 1)
                               : null,
                         ),
                         IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.chevron_left, size: 18),
                           onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
                               ? () => _fetchPedidos(pagina: _paginaAtual - 1)
                               : null,
                         ),
-
-                        // Aqui exibimos o contador de página e o total de registros
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withOpacity(0.08),
+                          ),
                           child: Text(
-                            "Pág. $_paginaAtual de $_totalPaginas ($_totalPedidos itens)",
+                            "Pág. $_paginaAtual de $_totalPaginas • $_totalPedidos itens",
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 12),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-
                         IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.chevron_right, size: 18),
                           onPressed: (_paginaAtual < _totalPaginas &&
                                   !_isLoadingPedidos)
-                              ? () => _fetchPedidos(pagina: _paginaAtual + 1)
+                              ? () => _fetchPedidos(
+                                    pagina: _paginaAtual + 1,
+                                  )
                               : null,
                         ),
                         IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.last_page, size: 18),
                           onPressed: (_paginaAtual < _totalPaginas &&
                                   !_isLoadingPedidos)
-                              ? () => _fetchPedidos(pagina: _totalPaginas)
+                              ? () => _fetchPedidos(
+                                    pagina: _totalPaginas,
+                                  )
                               : null,
                         ),
                       ],
