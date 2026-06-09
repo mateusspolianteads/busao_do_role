@@ -59,7 +59,7 @@ class _CadastroViewState extends State<CadastroView> {
 
     try {
       final url =
-          Uri.parse('https://busaorole.fwt.app.br/usuarios/cadastrar');
+          Uri.parse('http://localhost:8000/usuarios/cadastrar');
 
       final response = await http.post(
         url,

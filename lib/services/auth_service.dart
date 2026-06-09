@@ -10,7 +10,7 @@ class AuthResult {
 }
 
 class AuthService {
-  static const String baseUrl = "https://busaorole.fwt.app.br";
+  static const String baseUrl = "http://localhost:8000";
 
   static Future<AuthResult> login(String email, String senha) async {
     try {

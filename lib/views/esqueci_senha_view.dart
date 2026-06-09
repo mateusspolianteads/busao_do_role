@@ -33,7 +33,7 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
     });
 
     try {
-      final url = Uri.parse('https://busaorole.fwt.app.br/usuarios/esqueci-senha');
+      final url = Uri.parse('http://localhost:8000/usuarios/esqueci-senha');
 
       final response = await http.post(
         url,

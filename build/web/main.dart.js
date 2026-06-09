@@ -8025,7 +8025,7 @@ uj(a,b){return A.aYH(a,b)},
 aYH(a,b){var s=0,r=A.I(t.Tm),q,p=2,o=[],n,m,l,k,j,i,h,g
 var $async$uj=A.J(function(c,d){if(c===1){o.push(d)
 s=p}for(;;)switch(s){case 0:p=4
-k=A.fp("https://busaorole.fwt.app.br/login/")
+k=A.fp("http://localhost:8000/login/")
 j=t.N
 i=A.al(["Content-Type","application/json"],j,j)
 s=7
@@ -8103,7 +8103,7 @@ case 3:k=b
 j=A.cS(k.a.h(0,"refresh_token"))
 if(j==null){q=null
 s=1
-break}p=A.fp("https://busaorole.fwt.app.br/usuarios/refresh")
+break}p=A.fp("http://localhost:8000/usuarios/refresh")
 o=t.N
 n=A.al(["Content-Type","application/json"],o,o)
 s=4
@@ -47709,7 +47709,7 @@ $S:549}
 A.a8W.prototype={
 a4f(a){var s=0,r=A.I(t.Wd),q,p=this,o,n
 var $async$$1=A.J(function(b,c){if(b===1)return A.F(c,r)
-for(;;)switch(s){case 0:o=A.fp("https://busaorole.fwt.app.br"+p.a)
+for(;;)switch(s){case 0:o=A.fp("http://localhost:8000"+p.a)
 n=t.N
 n=A.u(n,n)
 n.m(0,"Content-Type","application/json")
@@ -47774,7 +47774,7 @@ if(f.a.a!==m.w.a.a){m.c.a8(t.J).f.eF(B.aaG)
 s=1
 break}m.Z(new A.avU(m))
 p=4
-l=A.fp("https://busaorole.fwt.app.br/usuarios/cadastrar")
+l=A.fp("http://localhost:8000/usuarios/cadastrar")
 e=t.N
 d=A.al(["Content-Type","application/json"],e,e)
 s=7
@@ -47863,7 +47863,7 @@ if(J.co(d)===0){m.c.a8(t.J).f.eF(B.aaP)
 s=1
 break}m.Z(new A.ayl(m))
 p=4
-l=A.fp("https://busaorole.fwt.app.br/usuarios/esqueci-senha")
+l=A.fp("http://localhost:8000/usuarios/esqueci-senha")
 i=t.N
 h=A.al(["Content-Type","application/json"],i,i)
 s=7
@@ -114062,7 +114062,7 @@ r($,"bf5","bE",()=>$.aMT())
 r($,"beB","aJg",()=>{A.b3B()
 return B.LX})
 s($,"bdT","aX8",()=>new A.amE())
-s($,"baO","aJ4",()=>{var q=A.aYJ("https://busaorole.fwt.app.br",A.al(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aUr(),o=new A.R2(A.b([B.Ma],A.av("z<hq?>")))
+s($,"baO","aJ4",()=>{var q=A.aYJ("http://localhost:8000",A.al(["Content-Type","multipart/form-data"],t.N,t.z)),p=A.aUr(),o=new A.R2(A.b([B.Ma],A.av("z<hq?>")))
 o.a_(o,B.Zu)
 o=new A.ac2(p,o,A.aUr(),new A.afE(51200),!1)
 o.a0f$=q

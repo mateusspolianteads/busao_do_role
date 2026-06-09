@@ -96,8 +96,6 @@ class _EventosTabState extends State<EventosTab> {
           eventos = [];
         }
 
-        // === ADICIONE ESTA LINHA AQUI ===
-        // Ordena os eventos colocando o maior ID (mais recente) no topo
         eventos.sort((a, b) {
           try {
             final dataA = DateTime.parse(a['data_evento']);
@@ -123,13 +121,11 @@ class _EventosTabState extends State<EventosTab> {
   String _descobrirNomeDaCategoria(dynamic categoriaId) {
     if (categoriaId == null) return "Sem Categoria";
 
-    // Procura na tua lista de categorias a linha que tem o mesmo ID
     final categoriaEncontrada = categorias.firstWhere(
       (c) => c['id'].toString() == categoriaId.toString(),
       orElse: () => null,
     );
 
-    // Se encontrou, devolve o 'nome' (texto). Se não, devolve 'Sem Categoria'
     return categoriaEncontrada != null
         ? (categoriaEncontrada['nome'] ?? "Sem Categoria")
         : "Sem Categoria";
@@ -137,7 +133,6 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _fetchCategorias() async {
     try {
-      // Aponta direto para o prefixo /categorias/listar da sua nova API
       final response = await ApiClient.request("/categorias/listar");
       if (response.statusCode == 200) {
         setState(() {
@@ -201,30 +196,19 @@ class _EventosTabState extends State<EventosTab> {
         }
       } else {
         String mensagem = "Erro ao salvar evento.";
-
         try {
           final dados = jsonDecode(response.body);
-
           if (dados is Map && dados['detail'] != null) {
             mensagem = dados['detail'].toString();
           }
         } catch (_) {}
-
         throw Exception(mensagem);
       }
     } catch (e) {
       if (mounted) {
-        String mensagem = e.toString();
-
-        if (mensagem.startsWith('Exception: ')) {
-          mensagem = mensagem.replaceFirst('Exception: ', '');
-        }
-
+        String mensagem = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(mensagem),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(mensagem), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -243,7 +227,6 @@ class _EventosTabState extends State<EventosTab> {
 
       if (response.statusCode == 200) {
         await _fetchEventos();
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -256,115 +239,142 @@ class _EventosTabState extends State<EventosTab> {
       }
 
       String mensagem = "Erro ao deletar evento.";
-
       try {
         final dados = jsonDecode(response.body);
-
         if (dados is Map && dados['detail'] != null) {
           mensagem = dados['detail'].toString();
         }
       } catch (_) {}
-
       throw Exception(mensagem);
     } catch (e) {
       if (mounted) {
-        String mensagem = e.toString();
-
-        if (mensagem.startsWith('Exception: ')) {
-          mensagem = mensagem.replaceFirst('Exception: ', '');
-        }
-
+        String mensagem = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(mensagem),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(mensagem), backgroundColor: Colors.red),
         );
       }
     }
   }
 
   Future<void> _excluirPassageirosDoEvento() async {
-    final confirmar = await showDialog<bool>(
+    if (eventoSelecionado == null) return;
+
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirmar exclusão"),
-        content: const Text(
-          "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Excluir"),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        bool excluindo = false;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: const Text("Confirmar exclusão"),
+              content: excluindo
+                  ? SizedBox(
+                      height: 100,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                              color: Theme.of(context).primaryColor),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Excluindo passageiros...",
+                            style: TextStyle(fontSize: 13),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : const Text(
+                      "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita.",
+                    ),
+              actions: excluindo
+                  ? []
+                  : [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text("Cancelar"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red),
+                        onPressed: () async {
+                          setModalState(() => excluindo = true);
+
+                          try {
+                            final response = await ApiClient.request(
+                              "/pedidos/evento/${eventoSelecionado!['id']}",
+                              method: "DELETE",
+                            );
+
+                            if (response.statusCode == 200) {
+                              if (mounted) {
+                                setState(() {
+                                  paginaAtual = 1;
+                                  search = "";
+                                  clientes = [];
+                                  totalClientes = 0;
+                                });
+                              }
+
+                              await Future.delayed(
+                                  const Duration(milliseconds: 1000));
+
+                              if (mounted) {
+                                Navigator.pop(dialogContext);
+                              }
+
+                              if (mounted) {
+                                _fetchClientesDoEvento(
+                                    eventoSelecionado!['id']);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        "Passageiros removidos com sucesso!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } else {
+                              String mensagem = "Erro ao excluir passageiros.";
+                              try {
+                                final dados = jsonDecode(response.body);
+                                if (dados is Map && dados['detail'] != null) {
+                                  mensagem = dados['detail'].toString();
+                                }
+                              } catch (_) {}
+                              throw Exception(mensagem);
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              Navigator.pop(dialogContext);
+                              String texto =
+                                  e.toString().replaceFirst("Exception: ", "");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(texto),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text("Excluir"),
+                      ),
+                    ],
+            );
+          },
+        );
+      },
     );
-
-    if (confirmar != true) return;
-
-    try {
-      final response = await ApiClient.request(
-        "/pedidos/evento/${eventoSelecionado!['id']}",
-        method: "DELETE",
-      );
-
-      if (response.statusCode == 200) {
-        if (mounted) {
-          setState(() {
-            paginaAtual = 1;
-            search = "";
-            clientes = [];
-            totalClientes = 0;
-          });
-
-          await _fetchClientesDoEvento(eventoSelecionado!['id']);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Passageiros removidos com sucesso!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-        return; // ✨ A MÁGICA ACONTECE AQUI: Para a execução se deu tudo certo!
-      }
-
-      // Se chegou aqui, é porque o statusCode NÃO foi 200
-      String mensagem = "Erro ao excluir passageiros.";
-
-      try {
-        final dados = jsonDecode(response.body);
-        if (dados is Map && dados['detail'] != null) {
-          mensagem = dados['detail'].toString();
-        }
-      } catch (_) {}
-
-      throw Exception(mensagem);
-    } catch (e) {
-      if (!mounted) return;
-
-      String texto = e.toString().replaceFirst("Exception: ", "");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(texto),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   Future<void> importarPlanilha() async {
     FilePickerResult? result;
 
     try {
-      // 1. Abre o seletor de arquivos primeiro (para não abrir o modal antes da hora)
       result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
@@ -375,17 +385,13 @@ class _EventosTabState extends State<EventosTab> {
       return;
     }
 
-    // Se o usuário fechou o seletor sem escolher nenhum arquivo, interrompe aqui
     if (result == null) return;
-
-    // Controle para fechar o modal com segurança no lugar certo
     bool modalAberto = false;
 
     try {
-      // 2. Abre o Modal de Loading imediatamente após a escolha do arquivo
       showDialog(
         context: context,
-        barrierDismissible: false, // Impede o usuário de fechar clicando fora
+        barrierDismissible: false,
         builder: (BuildContext dialogContext) {
           final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
           final textColor = isDark ? Colors.white : Colors.black;
@@ -426,7 +432,6 @@ class _EventosTabState extends State<EventosTab> {
       );
       modalAberto = true;
 
-      // 3. Prepara o arquivo para envio
       final file = result.files.first;
       MultipartFile multipartFile;
 
@@ -446,11 +451,9 @@ class _EventosTabState extends State<EventosTab> {
         "evento_id": eventoSelecionado!['id'],
       });
 
-      // 4. Envia para o servidor via Dio
       final response = await DioClient.dio
           .post("/pedidos/importar-planilha", data: formData);
 
-      // 5. Fecha o modal de loading assim que a resposta chegar
       if (modalAberto && mounted) {
         Navigator.pop(context);
         modalAberto = false;
@@ -466,12 +469,7 @@ class _EventosTabState extends State<EventosTab> {
 
         await _fetchClientesDoEvento(eventoSelecionado!['id']);
 
-        if (mounted) {
-          setState(() {});
-        }
-
         if (!mounted) return;
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Planilha importada com sucesso!"),
@@ -482,11 +480,9 @@ class _EventosTabState extends State<EventosTab> {
         throw Exception("Status do servidor: ${response.statusCode}");
       }
     } catch (e, stackTrace) {
-      // Garante que o modal fecha se houver alguma falha na requisição de rede
       if (modalAberto && mounted) {
         Navigator.pop(context);
       }
-
       debugPrint("ERRO CRÍTICO NA IMPORTAÇÃO: $e\n$stackTrace");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -529,12 +525,13 @@ class _EventosTabState extends State<EventosTab> {
     });
 
     try {
-      // ✨ EVITA CACHE NA WEB: Cria um número único baseado no tempo atual
+      // ✨ EVITA CACHE: Cria um número único baseado no tempo atual
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-      // Adicionamos &_cb=$timestamp no final do link
-      final response = await ApiClient.get(
+      // ALTERADO: Trocado .get por .request com method: "GET"
+      final response = await ApiClient.request(
         "/clientes/evento/$eventoId?pagina=$paginaAtual&limite=$clientesPorPagina&search=$search&_cb=$timestamp",
+        method: "GET",
       );
 
       if (response.statusCode == 200) {
@@ -570,7 +567,6 @@ class _EventosTabState extends State<EventosTab> {
       return;
     }
 
-    // Variáveis de controle de estado locais do Modal
     bool exportando = true;
     bool importando = false;
     bool importacaoConcluida = false;
@@ -578,29 +574,24 @@ class _EventosTabState extends State<EventosTab> {
     String? arquivoGerado;
     String? resumoImportacao;
 
-    // Abre o Modal imediatamente mostrando o loading de exportação
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Impede fechar clicando fora durante o processo crítico
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
         final textColor = isDark ? Colors.white : Colors.black;
 
         return StatefulBuilder(
           builder: (context, setModalState) {
-            // Dispara a requisição de Exportação apenas uma vez quando o modal monta
             if (exportando && erroMensagem == null && arquivoGerado == null) {
               () async {
                 try {
-                  // CORREÇÃO: Utilizando o método .request padrão do teu ApiClient
                   final response = await ApiClient.request(
                     '/pedidos/exportar-planilha',
                     method: "POST",
                     body: {'evento': nomeEvento},
                   );
 
-                  // CORREÇÃO: Verificação manual do StatusCode igual ao resto do teu código
                   if (response.statusCode == 200 ||
                       response.statusCode == 201) {
                     final data = json.decode(utf8.decode(response.bodyBytes));
@@ -610,7 +601,6 @@ class _EventosTabState extends State<EventosTab> {
                           data['nome_arquivo'] ?? 'cheers_export.xls';
                     });
                   } else {
-                    // TRATAMENTO DO ERRO DO FASTAPI:
                     String mensagem = "Erro desconhecido no servidor";
                     try {
                       final dadosErro =
@@ -624,7 +614,6 @@ class _EventosTabState extends State<EventosTab> {
                       mensagem = response.body;
                     }
 
-                    // Se a mensagem contiver o aviso do teu robô Python:
                     if (mensagem.contains("não encontrado na listagem")) {
                       mensagem =
                           "Este evento não foi encontrado na Cheers. Verifique se o nome está digitado corretamente.";
@@ -663,7 +652,6 @@ class _EventosTabState extends State<EventosTab> {
               ),
               content: SizedBox(
                 width: 320,
-                // Mantém o loading centralizado verticalmente nas fases de progresso
                 height: (exportando || importando) ? 180 : null,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -752,7 +740,6 @@ class _EventosTabState extends State<EventosTab> {
               actionsPadding:
                   const EdgeInsets.only(bottom: 20, left: 20, right: 20),
               actions: [
-                // Só exibe botões se não estiver no meio de uma operação de rede
                 if (!exportando && !importando) ...[
                   Row(
                     children: [
@@ -766,7 +753,6 @@ class _EventosTabState extends State<EventosTab> {
                                       : Colors.black54)),
                         ),
                       ),
-                      // O botão de Importar direto só aparece logo após a exportação com sucesso
                       if (erroMensagem == null && !importacaoConcluida) ...[
                         const SizedBox(width: 10),
                         Expanded(
@@ -780,7 +766,6 @@ class _EventosTabState extends State<EventosTab> {
                               });
 
                               try {
-                                // 1. Baixa o arquivo do backend (CORREÇÃO: Utilizando .request com POST)
                                 final downloadResponse =
                                     await ApiClient.request(
                                   '/pedidos/baixar-arquivo-exportado',
@@ -788,32 +773,26 @@ class _EventosTabState extends State<EventosTab> {
                                   body: {'nome_arquivo': arquivoGerado},
                                 );
 
-                                // CORREÇÃO: Verificação manual do StatusCode
                                 if (downloadResponse.statusCode == 200 ||
                                     downloadResponse.statusCode == 201) {
-                                  final bytes = downloadResponse
-                                      .bodyBytes; // Obtém os bytes brutos
+                                  final bytes = downloadResponse.bodyBytes;
 
-                                  // 2. Monta o FormData igual ao FilePicker, mas passando os bytes recebidos
                                   FormData formData = FormData.fromMap({
                                     "file": MultipartFile.fromBytes(bytes,
                                         filename: arquivoGerado),
                                     "evento_id": eventoSelecionado!['id'],
                                   });
 
-                                  // 3. Dispara a importação da planilha no banco
                                   final importResponse = await DioClient.dio
                                       .post("/pedidos/importar-planilha",
                                           data: formData);
 
                                   if (importResponse.statusCode == 201 ||
                                       importResponse.statusCode == 200) {
-                                    // Atualiza os dados da tabela na tela de fundo do Flutter
                                     setState(() => paginaAtual = 1);
                                     await _fetchClientesDoEvento(
                                         eventoSelecionado!['id']);
 
-                                    // Mapeia o resumo de resposta se o backend devolver dados
                                     String? resumo;
                                     if (importResponse.data != null &&
                                         importResponse.data is Map) {
@@ -894,9 +873,13 @@ class _EventosTabState extends State<EventosTab> {
   }
 
   void _abrirDetalhesEvento(Map<String, dynamic> evento) async {
+    // CORREÇÃO: Limpar explicitamente apenas ao MUDAR de evento
     setState(() {
       eventoSelecionado = evento;
       isEditingOrCreating = false;
+      clientes = [];
+      paginaAtual = 1;
+      search = "";
     });
     await _fetchClientesDoEvento(evento['id']);
   }
@@ -905,6 +888,7 @@ class _EventosTabState extends State<EventosTab> {
     setState(() {
       eventoSelecionado = null;
       isEditingOrCreating = false;
+      clientes = [];
     });
     _fetchEventos();
   }
@@ -1028,7 +1012,6 @@ class _EventosTabState extends State<EventosTab> {
     }
 
     DateTime? dataEvento;
-
     try {
       dataEvento = DateTime.parse(evento['data_evento']);
     } catch (_) {}
@@ -1057,9 +1040,7 @@ class _EventosTabState extends State<EventosTab> {
                 width: double.infinity,
                 height: 230,
                 child: Stack(
-                  // <-- Usamos o Stack para sobrepor elementos
                   children: [
-                    // 1. A Imagem ocupa todo o fundo do topo
                     Positioned.fill(
                       child: evento['imagem'] != null &&
                               evento['imagem'].toString().isNotEmpty
@@ -1105,8 +1086,6 @@ class _EventosTabState extends State<EventosTab> {
                               ),
                             ),
                     ),
-                    // 2. A Tag posicionada no canto superior esquerdo da imagem
-                    // 2. A Tag posicionada no canto superior esquerdo da imagem
                     Positioned(
                       top: 12,
                       left: 12,
@@ -1127,9 +1106,7 @@ class _EventosTabState extends State<EventosTab> {
                         child: Text(
                           _descobrirNomeDaCategoria(evento['categoria_id']),
                           style: const TextStyle(
-                            // 👇 ALTERA A COR DO TEXTO AQUI 👇
-                            color: Colors
-                                .white, // Mantém branco ou muda para Colors.black se o fundo for muito claro
+                            color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1391,146 +1368,111 @@ class _EventosTabState extends State<EventosTab> {
   }
 
   Widget _buildTelaDoEventoDetalhado(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width <
-        600; // Ajustado o limite para mobile clássico
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor =
         isDark ? const Color.fromARGB(255, 255, 255, 255) : Colors.black;
 
     return Padding(
       key: const ValueKey('TelaDetalhesEvento'),
-      padding: EdgeInsets.all(isMobile ? 20 : 40),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 40,
+        vertical: isMobile ? 16 : 30,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. TOPO: Botão voltar + Título responsivo (menor no mobile)
           Row(
             children: [
               IconButton(
                   icon: Icon(LucideIcons.arrowLeft, color: textColor),
                   onPressed: _voltarParaEventos),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   eventoSelecionado?['nome'] ?? '',
                   style: TextStyle(
-                      fontSize: 28,
+                      fontSize: isMobile ? 22 : 28,
                       fontWeight: FontWeight.bold,
                       color: textColor),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 16), // Espaçamento reduzido
 
-          // === GRID RESPONSIVO DE BOTÕES DE AÇÃO (Lado a lado no desktop, empilhado no mobile) ===
+          // 2. BOTÕES DE AÇÃO: Lado a lado em qualquer tamanho de tela
           Center(
             child: Container(
               constraints: const BoxConstraints(maxWidth: 600),
-              child: isMobile
-                  ? Column(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          height: 46,
-                          child: ElevatedButton.icon(
-                            onPressed: importarPlanilha,
-                            icon: const Icon(LucideIcons.fileSpreadsheet,
-                                size: 18),
-                            label: const Text("Importar Planilha",
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 40, // Altura mais elegante
+                      child: ElevatedButton.icon(
+                        onPressed: importarPlanilha,
+                        icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
+                        label: Text(
+                          isMobile ? "Importar" : "Importar Planilha",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 46,
-                          child: ElevatedButton.icon(
-                            onPressed: eventoSelecionado == null
-                                ? null
-                                : _exportarCheers,
-                            icon: const Icon(LucideIcons.refreshCw, size: 18),
-                            label: const Text("Atualizar Cheers",
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 46,
-                            child: ElevatedButton.icon(
-                              onPressed: importarPlanilha,
-                              icon: const Icon(LucideIcons.fileSpreadsheet,
-                                  size: 18),
-                              label: const Text("Importar Planilha",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 46,
-                            child: ElevatedButton.icon(
-                              onPressed: eventoSelecionado == null
-                                  ? null
-                                  : _exportarCheers,
-                              icon: const Icon(LucideIcons.refreshCw, size: 18),
-                              label: const Text("Atualizar Cheers",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            eventoSelecionado == null ? null : _exportarCheers,
+                        icon: const Icon(LucideIcons.refreshCw, size: 16),
+                        label: Text(
+                          isMobile ? "Atualizar" : "Atualizar Cheers",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 16),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+          // 3. BUSCA: Campo mais compacto verticalmente
+          SizedBox(
+            height: 42,
             child: TextField(
+              style: TextStyle(color: textColor, fontSize: 14),
               decoration: InputDecoration(
                 labelText: "Buscar cliente",
-                prefixIcon: const Icon(Icons.search),
+                labelStyle: const TextStyle(fontSize: 13),
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onChanged: (value) {
                 _debounce?.cancel();
@@ -1546,7 +1488,9 @@ class _EventosTabState extends State<EventosTab> {
               },
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 16),
+
+          // 4. TABELA: Ocupa todo o resto do espaço disponível de forma dinâmica
           Expanded(
             child: carregandoClientes
                 ? Center(
@@ -1556,7 +1500,7 @@ class _EventosTabState extends State<EventosTab> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                           color: isDark
                               ? Colors.white.withOpacity(0.08)
@@ -1573,10 +1517,11 @@ class _EventosTabState extends State<EventosTab> {
                           )
                         : Column(
                             children: [
+                              // Cabeçalho interno da tabela ligeiramente menor
                               Container(
-                                height: 60,
+                                height: 50,
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 24),
+                                    const EdgeInsets.symmetric(horizontal: 16),
                                 decoration: BoxDecoration(
                                   color: isDark
                                       ? Colors.white.withOpacity(0.02)
@@ -1627,14 +1572,16 @@ class _EventosTabState extends State<EventosTab> {
                                   ],
                                 ),
                               ),
+                              // Área rolável das linhas da tabela
                               Expanded(
                                 child: SingleChildScrollView(
                                     child: DataTable(
                                   showCheckboxColumn: false,
                                   headingRowHeight: 0,
                                   dividerThickness: 0,
-                                  dataRowMinHeight: 70,
-                                  dataRowMaxHeight: 70,
+                                  dataRowMinHeight:
+                                      60, // Reduzido de 70 para 60 para exibir mais registros
+                                  dataRowMaxHeight: 60,
                                   columns: const [
                                     DataColumn(
                                       label: SizedBox.shrink(),
@@ -1662,9 +1609,10 @@ class _EventosTabState extends State<EventosTab> {
                                   }).toList(),
                                 )),
                               ),
+                              // Rodapé de paginação mais compacto
                               Container(
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 20),
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   border: Border(
                                     top: BorderSide(
