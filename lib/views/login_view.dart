@@ -209,7 +209,7 @@ class _LoginViewState extends State<LoginView> {
                           ),
                         ),
 
-                        const SizedBox(height: 5), // Espaço mínimo
+                        const SizedBox(height: 10), // Espaço mínimo
 
                         TextButton(
                           style: TextButton.styleFrom(

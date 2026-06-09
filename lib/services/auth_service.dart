@@ -11,7 +11,7 @@ class AuthResult {
 
 class AuthService {
   static const String baseUrl = "https://busaorole.fwt.app.br";
-  
+
   // Instância privada do Dio para auth
   static final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
@@ -32,20 +32,41 @@ class AuthService {
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
 
-        await prefs.setString("access_token", response.data['access_token']);
-        await prefs.setString("refresh_token", response.data['refresh_token']);
+        await prefs.setString(
+          "access_token",
+          response.data['access_token'],
+        );
+
+        await prefs.setString(
+          "refresh_token",
+          response.data['refresh_token'],
+        );
 
         return const AuthResult(sucesso: true);
       }
 
       return AuthResult(
         sucesso: false,
-        erro: response.data['detail'] ?? "Email ou senha inválidos",
+        erro: response.data['detail']?.toString() ?? "Email ou senha inválidos",
       );
     } on DioException catch (e) {
+      String erro = "Erro de conexão com servidor";
+
+      final data = e.response?.data;
+
+      if (data is Map && data['detail'] != null) {
+        erro = data['detail'].toString();
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        erro = "Tempo de conexão esgotado";
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        erro = "Servidor demorou para responder";
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        erro = e.message!;
+      }
+
       return AuthResult(
         sucesso: false,
-        erro: e.message ?? "Erro de conexão com servidor",
+        erro: erro,
       );
     } catch (e) {
       return AuthResult(
@@ -121,4 +142,3 @@ class AuthService {
     }
   }
 }
-
