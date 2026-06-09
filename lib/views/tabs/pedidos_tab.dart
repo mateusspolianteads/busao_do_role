@@ -397,60 +397,46 @@ class _PedidosTabState extends State<PedidosTab> {
                       vertical: 8,
                       horizontal: 12,
                     ),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      runSpacing: 8,
+                    child: Row(
                       children: [
                         IconButton(
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.first_page, size: 18),
                           onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
                               ? () => _fetchPedidos(pagina: 1)
                               : null,
                         ),
                         IconButton(
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.chevron_left, size: 18),
                           onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
                               ? () => _fetchPedidos(pagina: _paginaAtual - 1)
                               : null,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Theme.of(context)
-                                .dividerColor
-                                .withOpacity(0.08),
-                          ),
-                          child: Text(
-                            "Pág. $_paginaAtual de $_totalPaginas • $_totalPedidos itens",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                        Expanded(
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Theme.of(context)
+                                  .dividerColor
+                                  .withOpacity(0.08),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "Pág. $_paginaAtual de $_totalPaginas • $_totalPedidos itens",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                         IconButton(
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.chevron_right, size: 18),
                           onPressed: (_paginaAtual < _totalPaginas &&
                                   !_isLoadingPedidos)
@@ -460,11 +446,6 @@ class _PedidosTabState extends State<PedidosTab> {
                               : null,
                         ),
                         IconButton(
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          padding: EdgeInsets.zero,
                           icon: const Icon(Icons.last_page, size: 18),
                           onPressed: (_paginaAtual < _totalPaginas &&
                                   !_isLoadingPedidos)
