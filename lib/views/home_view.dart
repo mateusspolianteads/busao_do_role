@@ -18,28 +18,40 @@ class _HomeViewState extends State<HomeView> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  late final List<Widget> _pages = [
-    const DashboardTab(),
-    const EventosTab(),
-    const PedidosTab(),
-    const ConfigTab(),
+  // Lazy loading das tabs - carregadas sob demanda
+  final Map<int, Widget> _cachedPages = {};
+
+  late final List<({String label, IconData icon, int index})> _navItems = [
+    (label: "Dashboard", icon: LucideIcons.layoutDashboard, index: 0),
+    (label: "Eventos", icon: LucideIcons.ticket, index: 1),
+    (label: "Pedidos", icon: LucideIcons.shoppingBag, index: 2),
+    (label: "Configurações", icon: LucideIcons.settings, index: 3),
   ];
 
   @override
   void initState() {
     super.initState();
+    // Pré-carregar apenas a primeira tab
+    _cachedPages[0] = const DashboardTab();
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      precacheImage(
-        const AssetImage('assets/img/logo_branca.png'),
-        context,
-      );
+  /// Obtém a widget da tab, com lazy loading
+  Widget _getTabWidget(int index) {
+    if (!_cachedPages.containsKey(index)) {
+      _cachedPages[index] = _buildTabWidget(index);
+    }
+    return _cachedPages[index]!;
+  }
 
-      precacheImage(
-        const AssetImage('assets/img/logo_preta.png'),
-        context,
-      );
-    });
+  /// Constrói a widget correta baseado no índice
+  Widget _buildTabWidget(int index) {
+    return switch (index) {
+      0 => const DashboardTab(),
+      1 => const EventosTab(),
+      2 => const PedidosTab(),
+      3 => const ConfigTab(),
+      _ => const DashboardTab(),
+    };
   }
 
   @override
@@ -57,13 +69,12 @@ class _HomeViewState extends State<HomeView> {
               ? AppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,
-                  title: Text(
+                  title: const Text(
                     'Busão do Rolê',
                     style: TextStyle(
                       fontFamily: 'TitanOne',
                       fontSize: 22,
                       fontWeight: FontWeight.w400,
-                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   centerTitle: true,
@@ -80,27 +91,27 @@ class _HomeViewState extends State<HomeView> {
           body: Row(
             children: [
               if (!isMobile)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  width: 280,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    border: Border(
-                      right: BorderSide(
-                        color: isDark
-                            ? const Color(0xFF1E1E1E)
-                            : const Color(0xFFE5E5E5),
+                RepaintBoundary(
+                  child: Container(
+                    width: 280,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      border: Border(
+                        right: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : const Color(0xFFE5E5E5),
+                        ),
                       ),
                     ),
-                  ),
-                  child: _buildMenuContent(
-                    isMobile: false,
-                    isDark: isDark,
+                    child: _buildMenuContent(
+                      isMobile: false,
+                      isDark: isDark,
+                    ),
                   ),
                 ),
               Expanded(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
+                child: Container(
                   decoration: BoxDecoration(
                     gradient: isDark
                         ? const RadialGradient(
@@ -120,7 +131,7 @@ class _HomeViewState extends State<HomeView> {
                     switchOutCurve: Curves.easeIn,
                     child: KeyedSubtree(
                       key: ValueKey(_selectedIndex),
-                      child: _pages[_selectedIndex],
+                      child: _getTabWidget(_selectedIndex),
                     ),
                   ),
                 ),
@@ -194,18 +205,23 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
           ),
-          _buildNavItem("Dashboard", LucideIcons.layoutDashboard, 0),
-          _buildNavItem("Eventos", LucideIcons.ticket, 1),
-          _buildNavItem("Pedidos", LucideIcons.shoppingBag, 2),
+          ..._navItems.map((item) => _buildNavItem(
+            label: item.label,
+            icon: item.icon,
+            index: item.index,
+          )),
           const Spacer(),
-          _buildNavItem("Configurações", LucideIcons.settings, 3),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(String label, IconData icon, int index) {
+  Widget _buildNavItem({
+    required String label,
+    required IconData icon,
+    required int index,
+  }) {
     bool isActive = _selectedIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

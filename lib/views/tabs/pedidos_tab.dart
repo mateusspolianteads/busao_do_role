@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'package:busao_do_role/services/auth_service.dart';
-import 'package:busao_do_role/services/api_client.dart';
+import 'package:busao_do_role/services/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class PedidoModel {
@@ -95,11 +93,12 @@ class _PedidosTabState extends State<PedidosTab> {
 
   Future<void> _fetchEventos() async {
     try {
-      final response = await ApiClient.request('/eventos/listar');
+      final response = await DioClient.dio.get('/eventos/listar');
 
       if (response.statusCode == 200) {
-        List<dynamic> jsonResponse =
-            json.decode(utf8.decode(response.bodyBytes));
+        List<dynamic> jsonResponse = response.data is String
+            ? json.decode(response.data)
+            : response.data;
         List<EventoModel> eventosCarregados =
             jsonResponse.map((data) => EventoModel.fromJson(data)).toList();
 
@@ -128,13 +127,14 @@ class _PedidosTabState extends State<PedidosTab> {
     int skip = (_paginaAtual - 1) * _limit;
 
     try {
-      final response = await ApiClient.request(
-        "/pedidos/evento/$_eventoSelecionadoId?skip=$skip&limit=$_limit",
+      final response = await DioClient.dio.get(
+        "/pedidos/evento/$_eventoSelecionadoId",
+        queryParameters: {'skip': skip, 'limit': _limit},
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse =
-            json.decode(utf8.decode(response.bodyBytes));
+            response.data is String ? json.decode(response.data) : response.data;
         final List<dynamic> pedidosJson = jsonResponse['pedidos'];
         List<PedidoModel> novosPedidos = pedidosJson
             .map((data) => PedidoModel.fromJson(data as Map<String, dynamic>))

@@ -1,54 +1,68 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthResult {
   final bool sucesso;
   final String? erro;
 
-  AuthResult({required this.sucesso, this.erro});
+  const AuthResult({required this.sucesso, this.erro});
 }
 
 class AuthService {
-  static const String baseUrl = "http://localhost:8000";
+  static const String baseUrl = "https://busaorole.fwt.app.br";
+  
+  // Instância privada do Dio para auth
+  static final Dio _dio = Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ));
 
   static Future<AuthResult> login(String email, String senha) async {
     try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/login/"),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await _dio.post(
+        '/login/',
+        data: {
           "email": email,
           "senha": senha,
-        }),
+        },
       );
-
-      final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
 
-        await prefs.setString("access_token", data['access_token']);
-        await prefs.setString("refresh_token", data['refresh_token']);
+        await prefs.setString("access_token", response.data['access_token']);
+        await prefs.setString("refresh_token", response.data['refresh_token']);
 
-        return AuthResult(sucesso: true);
+        return const AuthResult(sucesso: true);
       }
 
       return AuthResult(
         sucesso: false,
-        erro: data['detail'] ?? "Email ou senha inválidos",
+        erro: response.data['detail'] ?? "Email ou senha inválidos",
+      );
+    } on DioException catch (e) {
+      return AuthResult(
+        sucesso: false,
+        erro: e.message ?? "Erro de conexão com servidor",
       );
     } catch (e) {
       return AuthResult(
         sucesso: false,
-        erro: "Erro de conexão com servidor",
+        erro: "Erro desconhecido: ${e.toString()}",
       );
     }
   }
 
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("access_token");
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString("access_token");
+    } catch (e) {
+      debugPrint('Erro ao obter token: $e');
+      return null;
+    }
   }
 
   static Future<bool> isLogged() async {
@@ -57,46 +71,54 @@ class AuthService {
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("access_token");
-    await prefs.remove("refresh_token");
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove("access_token");
+      await prefs.remove("refresh_token");
+    } catch (e) {
+      debugPrint('Erro ao fazer logout: $e');
+    }
   }
 
   static Future<bool> hasValidSession() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final token = prefs.getString("access_token");
-
-    if (token == null) return false;
-
-    return true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("access_token");
+      return token != null;
+    } catch (e) {
+      debugPrint('Erro ao verificar sessão: $e');
+      return false;
+    }
   }
 
   static Future<String?> refreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final refresh = prefs.getString("refresh_token");
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refresh = prefs.getString("refresh_token");
 
-    if (refresh == null) return null;
+      if (refresh == null) return null;
 
-    final response = await http.post(
-      Uri.parse("$baseUrl/usuarios/refresh"),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({"refresh_token": refresh}),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      await prefs.setString(
-        "access_token",
-        data["access_token"],
+      final response = await _dio.post(
+        '/usuarios/refresh',
+        data: {"refresh_token": refresh},
       );
 
-      return data["access_token"];
+      if (response.statusCode == 200) {
+        await prefs.setString(
+          "access_token",
+          response.data["access_token"],
+        );
+
+        return response.data["access_token"];
+      }
+
+      await logout();
+      return null;
+    } on DioException catch (e) {
+      debugPrint('Erro ao renovar token: ${e.message}');
+      await logout();
+      return null;
     }
-
-    await logout();
-
-    return null;
   }
 }
+

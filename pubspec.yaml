@@ -15,7 +15,6 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   lucide_icons: ^0.257.0
-  http: ^1.2.1
   file_picker: ^8.1.2
   dio: ^5.4.0
   intl: ^0.20.2
@@ -29,6 +28,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   # Configuração de Assets
   assets:
@@ -40,6 +40,7 @@ flutter:
     - family: TitanOne
       fonts:
         - asset: assets/fonts/TitanOne-Regular.ttf
+          weight: 400
 
 # Configuração automática dos ícones do "Busão do Rolê"
 flutter_launcher_icons:

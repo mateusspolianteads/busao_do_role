@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:busao_do_role/services/api_client.dart';
 import 'package:busao_do_role/services/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -83,8 +81,8 @@ class _EventosTabState extends State<EventosTab> {
     setState(() => isLoading = true);
 
     try {
-      final response = await ApiClient.request("$apiUrl/listar");
-      final dados = jsonDecode(response.body);
+      final response = await DioClient.dio.get("$apiUrl/listar");
+      final dados = response.data is String ? jsonDecode(response.data) : response.data;
 
       if (!mounted) return;
       setState(() {
@@ -133,10 +131,10 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _fetchCategorias() async {
     try {
-      final response = await ApiClient.request("/categorias/listar");
+      final response = await DioClient.dio.get("/categorias/listar");
       if (response.statusCode == 200) {
         setState(() {
-          categorias = jsonDecode(response.body);
+          categorias = response.data is String ? jsonDecode(response.data) : response.data;
         });
       }
     } catch (e) {
@@ -169,18 +167,16 @@ class _EventosTabState extends State<EventosTab> {
     };
 
     try {
-      http.Response response;
+      Response response;
       if (eventoSelecionado == null) {
-        response = await ApiClient.request(
+        response = await DioClient.dio.post(
           "/eventos/cadastrar",
-          method: "POST",
-          body: mapDados,
+          data: mapDados,
         );
       } else {
-        response = await ApiClient.request(
+        response = await DioClient.dio.put(
           "/eventos/atualizar/${eventoSelecionado!['id']}",
-          method: "PUT",
-          body: mapDados,
+          data: mapDados,
         );
       }
 
@@ -197,7 +193,7 @@ class _EventosTabState extends State<EventosTab> {
       } else {
         String mensagem = "Erro ao salvar evento.";
         try {
-          final dados = jsonDecode(response.body);
+          final dados = response.data is String ? jsonDecode(response.data) : response.data;
           if (dados is Map && dados['detail'] != null) {
             mensagem = dados['detail'].toString();
           }
@@ -220,9 +216,8 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _deletarEvento(dynamic id) async {
     try {
-      final response = await ApiClient.request(
+      final response = await DioClient.dio.delete(
         "/eventos/deletar/$id",
-        method: "DELETE",
       );
 
       if (response.statusCode == 200) {
@@ -240,7 +235,7 @@ class _EventosTabState extends State<EventosTab> {
 
       String mensagem = "Erro ao deletar evento.";
       try {
-        final dados = jsonDecode(response.body);
+        final dados = response.data is String ? jsonDecode(response.data) : response.data;
         if (dados is Map && dados['detail'] != null) {
           mensagem = dados['detail'].toString();
         }
@@ -303,9 +298,8 @@ class _EventosTabState extends State<EventosTab> {
                           setModalState(() => excluindo = true);
 
                           try {
-                            final response = await ApiClient.request(
+                            final response = await DioClient.dio.delete(
                               "/pedidos/evento/${eventoSelecionado!['id']}",
-                              method: "DELETE",
                             );
 
                             if (response.statusCode == 200) {
@@ -340,7 +334,7 @@ class _EventosTabState extends State<EventosTab> {
                             } else {
                               String mensagem = "Erro ao excluir passageiros.";
                               try {
-                                final dados = jsonDecode(response.body);
+                                final dados = response.data is String ? jsonDecode(response.data) : response.data;
                                 if (dados is Map && dados['detail'] != null) {
                                   mensagem = dados['detail'].toString();
                                 }
@@ -496,10 +490,9 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> editarCliente(
       int id, String nome, String email, String cpf, String telefone) async {
-    await ApiClient.request(
+    await DioClient.dio.put(
       "/clientes/atualizar/$id",
-      method: "PUT",
-      body: {'nome': nome, 'email': email, 'cpf': cpf, 'telefone': telefone},
+      data: {'nome': nome, 'email': email, 'cpf': cpf, 'telefone': telefone},
     );
     await _fetchClientesDoEvento(eventoSelecionado!['id']);
   }
@@ -528,14 +521,18 @@ class _EventosTabState extends State<EventosTab> {
       // ✨ EVITA CACHE: Cria um número único baseado no tempo atual
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-      // ALTERADO: Trocado .get por .request com method: "GET"
-      final response = await ApiClient.request(
-        "/clientes/evento/$eventoId?pagina=$paginaAtual&limite=$clientesPorPagina&search=$search&_cb=$timestamp",
-        method: "GET",
+      final response = await DioClient.dio.get(
+        "/clientes/evento/$eventoId",
+        queryParameters: {
+          'pagina': paginaAtual,
+          'limite': clientesPorPagina,
+          'search': search,
+          '_cb': timestamp,
+        },
       );
 
       if (response.statusCode == 200) {
-        final dados = jsonDecode(response.body);
+        final dados = response.data is String ? jsonDecode(response.data) : response.data;
         if (mounted) {
           setState(() {
             clientes = dados['clientes'] ?? [];
@@ -555,18 +552,22 @@ class _EventosTabState extends State<EventosTab> {
   Future<void> _exportarCheers() async {
     if (eventoSelecionado == null) return;
 
+    // Obtém o ID e o Nome do evento de forma segura
+    final int idEvento = eventoSelecionado?['id'] ?? 0;
     final nomeEvento = eventoSelecionado?['nome']?.toString().trim() ?? '';
-    if (nomeEvento.isEmpty) {
+    
+    if (nomeEvento.isEmpty || idEvento == 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Nome de evento inválido para exportação.'),
+          content: Text('Dados do evento inválidos para exportação.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
+    // Variáveis de controle de estado locais do Modal
     bool exportando = true;
     bool importando = false;
     bool importacaoConcluida = false;
@@ -574,49 +575,49 @@ class _EventosTabState extends State<EventosTab> {
     String? arquivoGerado;
     String? resumoImportacao;
 
+    // Abre o Modal imediatamente mostrando o loading de exportação
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: false, // Impede fechar clicando fora durante o processo crítico
       builder: (BuildContext dialogContext) {
         final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
         final textColor = isDark ? Colors.white : Colors.black;
 
         return StatefulBuilder(
           builder: (context, setModalState) {
+            // Dispara a requisição de Exportação apenas uma vez quando o modal monta
             if (exportando && erroMensagem == null && arquivoGerado == null) {
               () async {
                 try {
-                  final response = await ApiClient.request(
+                  // ✨ FIX: Enviando em formato JSON com o Schema exato esperado pelo Pydantic/FastAPI
+                  final response = await DioClient.dio.post(
                     '/pedidos/exportar-planilha',
-                    method: "POST",
-                    body: {'evento': nomeEvento},
+                    data: jsonEncode({
+                      'evento_id': idEvento,
+                      'evento': nomeEvento,
+                    }),
+                    options: Options(
+                      contentType: 'application/json',
+                    ),
                   );
 
-                  if (response.statusCode == 200 ||
-                      response.statusCode == 201) {
-                    final data = json.decode(utf8.decode(response.bodyBytes));
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    final data = response.data is String ? json.decode(response.data) : response.data;
                     setModalState(() {
                       exportando = false;
-                      arquivoGerado =
-                          data['nome_arquivo'] ?? 'cheers_export.xls';
+                      arquivoGerado = data['nome_arquivo'] ?? 'cheers_export.xls';
                     });
                   } else {
                     String mensagem = "Erro desconhecido no servidor";
-                    try {
-                      final dadosErro =
-                          json.decode(utf8.decode(response.bodyBytes));
-                      if (dadosErro is Map && dadosErro['detail'] != null) {
-                        mensagem = dadosErro['detail'].toString();
-                      } else {
-                        mensagem = response.body;
-                      }
-                    } catch (_) {
-                      mensagem = response.body;
+                    final data = response.data;
+                    if (data is Map && data['detail'] != null) {
+                      mensagem = data['detail'].toString();
+                    } else {
+                      mensagem = data.toString();
                     }
 
                     if (mensagem.contains("não encontrado na listagem")) {
-                      mensagem =
-                          "Este evento não foi encontrado na Cheers. Verifique se o nome está digitado corretamente.";
+                      mensagem = "Este evento não foi encontrado na Cheers. Verifique se o nome está digitado corretamente.";
                     }
 
                     setModalState(() {
@@ -625,9 +626,18 @@ class _EventosTabState extends State<EventosTab> {
                     });
                   }
                 } catch (e) {
+                  String mensagem = e.toString();
+                  if (e is DioException && e.response != null) {
+                    final data = e.response?.data;
+                    if (data is Map && data['detail'] != null) {
+                      mensagem = data['detail'].toString();
+                    } else if (data != null) {
+                      mensagem = data.toString();
+                    }
+                  }
                   setModalState(() {
                     exportando = false;
-                    erroMensagem = e.toString();
+                    erroMensagem = mensagem;
                   });
                 }
               }();
@@ -635,8 +645,7 @@ class _EventosTabState extends State<EventosTab> {
 
             return AlertDialog(
               backgroundColor: Theme.of(dialogContext).cardColor,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 exportando
                     ? "Exportando Cheers"
@@ -644,9 +653,7 @@ class _EventosTabState extends State<EventosTab> {
                         ? "Importando Planilha"
                         : importacaoConcluida
                             ? "Importação Concluída"
-                            : (erroMensagem != null
-                                ? "Falha no Processo"
-                                : "Exportação Concluída"),
+                            : (erroMensagem != null ? "Falha no Processo" : "Exportação Concluída"),
                 style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -659,8 +666,7 @@ class _EventosTabState extends State<EventosTab> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     if (exportando) ...[
-                      CircularProgressIndicator(
-                          color: Theme.of(dialogContext).primaryColor),
+                      CircularProgressIndicator(color: Theme.of(dialogContext).primaryColor),
                       const SizedBox(height: 24),
                       Text(
                         "Gerando planilha, por favor aguarde...",
@@ -676,39 +682,30 @@ class _EventosTabState extends State<EventosTab> {
                         style: TextStyle(color: textColor),
                       ),
                     ] else if (erroMensagem != null) ...[
-                      const Icon(LucideIcons.alertTriangle,
-                          color: Colors.red, size: 48),
+                      const Icon(LucideIcons.alertTriangle, color: Colors.red, size: 48),
                       const SizedBox(height: 16),
                       Text("Erro: $erroMensagem",
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.red)),
                     ] else if (importacaoConcluida) ...[
-                      const Icon(LucideIcons.checkCircle2,
-                          color: Colors.green, size: 54),
+                      const Icon(LucideIcons.checkCircle2, color: Colors.green, size: 54),
                       const SizedBox(height: 16),
                       Text(
                         "Sucesso!",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                            fontSize: 18),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        resumoImportacao ??
-                            "Os participantes deste evento foram sincronizados.",
+                        resumoImportacao ?? "Os participantes deste evento foram sincronizados.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: textColor.withOpacity(0.7), fontSize: 13),
+                        style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 13),
                       ),
                     ] else ...[
-                      const Icon(LucideIcons.checkCircle2,
-                          color: Colors.green, size: 48),
+                      const Icon(LucideIcons.checkCircle2, color: Colors.green, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         "Arquivo gerado com sucesso!",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: textColor),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -719,14 +716,12 @@ class _EventosTabState extends State<EventosTab> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(LucideIcons.fileSpreadsheet,
-                                color: Colors.green, size: 20),
+                            const Icon(LucideIcons.fileSpreadsheet, color: Colors.green, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 arquivoGerado ?? '',
-                                style:
-                                    TextStyle(color: textColor, fontSize: 13),
+                                style: TextStyle(color: textColor, fontSize: 13),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -737,8 +732,7 @@ class _EventosTabState extends State<EventosTab> {
                   ],
                 ),
               ),
-              actionsPadding:
-                  const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+              actionsPadding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
               actions: [
                 if (!exportando && !importando) ...[
                   Row(
@@ -746,64 +740,54 @@ class _EventosTabState extends State<EventosTab> {
                       Expanded(
                         child: TextButton(
                           onPressed: () => Navigator.pop(dialogContext),
-                          child: Text("Fechar",
-                              style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : Colors.black54)),
+                          child: Text("Fechar", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
                         ),
                       ),
                       if (erroMensagem == null && !importacaoConcluida) ...[
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                             onPressed: () async {
                               setModalState(() {
                                 importando = true;
                               });
 
                               try {
-                                final downloadResponse =
-                                    await ApiClient.request(
+                                // 1. Baixa o arquivo do backend utilizando Dio forçando o recebimento de Bytes puros
+                                final downloadResponse = await DioClient.dio.post(
                                   '/pedidos/baixar-arquivo-exportado',
-                                  method: "POST",
-                                  body: {'nome_arquivo': arquivoGerado},
+                                  data: jsonEncode({'nome_arquivo': arquivoGerado}),
+                                  options: Options(
+                                    contentType: 'application/json',
+                                    responseType: ResponseType.bytes,
+                                  ),
                                 );
 
-                                if (downloadResponse.statusCode == 200 ||
-                                    downloadResponse.statusCode == 201) {
-                                  final bytes = downloadResponse.bodyBytes;
+                                if (downloadResponse.statusCode == 200 || downloadResponse.statusCode == 201) {
+                                  final List<int> bytes = downloadResponse.data;
 
+                                  // 2. Monta o FormData igual ao FilePicker, mas passando os bytes recebidos
                                   FormData formData = FormData.fromMap({
-                                    "file": MultipartFile.fromBytes(bytes,
-                                        filename: arquivoGerado),
-                                    "evento_id": eventoSelecionado!['id'],
+                                    "file": MultipartFile.fromBytes(bytes, filename: arquivoGerado),
+                                    "evento_id": idEvento,
                                   });
 
-                                  final importResponse = await DioClient.dio
-                                      .post("/pedidos/importar-planilha",
-                                          data: formData);
+                                  // 3. Dispara a importação da planilha no banco
+                                  final importResponse = await DioClient.dio.post(
+                                    "/pedidos/importar-planilha",
+                                    data: formData,
+                                  );
 
-                                  if (importResponse.statusCode == 201 ||
-                                      importResponse.statusCode == 200) {
+                                  if (importResponse.statusCode == 201 || importResponse.statusCode == 200) {
                                     setState(() => paginaAtual = 1);
-                                    await _fetchClientesDoEvento(
-                                        eventoSelecionado!['id']);
+                                    await _fetchClientesDoEvento(idEvento);
 
                                     String? resumo;
-                                    if (importResponse.data != null &&
-                                        importResponse.data is Map) {
-                                      final totalNovos = importResponse
-                                              .data['total_clientes_novos'] ??
-                                          0;
-                                      final totalPedidos = importResponse
-                                              .data['total_pedidos_criados'] ??
-                                          0;
-                                      resumo =
-                                          "$totalNovos novos clientes e $totalPedidos pedidos integrados.";
+                                    if (importResponse.data != null && importResponse.data is Map) {
+                                      final totalNovos = importResponse.data['total_clientes_novos'] ?? 0;
+                                      final totalPedidos = importResponse.data['total_pedidos_criados'] ?? 0;
+                                      resumo = "$totalNovos novos clientes e $totalPedidos pedidos integrados.";
                                     }
 
                                     setModalState(() {
@@ -814,29 +798,33 @@ class _EventosTabState extends State<EventosTab> {
                                   } else {
                                     setModalState(() {
                                       importando = false;
-                                      erroMensagem =
-                                          "Erro ao processar planilha no servidor.";
+                                      erroMensagem = "Erro ao processar planilha no servidor.";
                                     });
                                   }
                                 } else {
                                   setModalState(() {
                                     importando = false;
-                                    erroMensagem =
-                                        "Falha ao baixar o arquivo exportado.";
+                                    erroMensagem = "Falha ao baixar o arquivo exportado.";
                                   });
                                 }
                               } catch (e) {
+                                String msg = e.toString();
+                                if (e is DioException && e.response != null) {
+                                  final data = e.response?.data;
+                                  if (data is Map && data['detail'] != null) {
+                                    msg = data['detail'].toString();
+                                  } else if (data != null) {
+                                    msg = data.toString();
+                                  }
+                                }
                                 setModalState(() {
                                   importando = false;
-                                  erroMensagem =
-                                      "Erro na importação automática: ${e.toString()}";
+                                  erroMensagem = msg;
                                 });
                               }
                             },
-                            icon: const Icon(LucideIcons.fileInput,
-                                color: Colors.white, size: 16),
-                            label: const Text("Importar",
-                                style: TextStyle(color: Colors.white)),
+                            icon: const Icon(LucideIcons.fileInput, color: Colors.white, size: 16),
+                            label: const Text("Importar", style: TextStyle(color: Colors.white)),
                           ),
                         ),
                       ],

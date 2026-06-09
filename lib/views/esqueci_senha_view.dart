@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:busao_do_role/services/dio_client.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class EsqueciSenhaView extends StatefulWidget {
@@ -33,14 +33,9 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
     });
 
     try {
-      final url = Uri.parse('http://localhost:8000/usuarios/esqueci-senha');
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-        }),
+      final response = await DioClient.dio.post(
+        '/usuarios/esqueci-senha',
+        data: {'email': email},
       );
 
       if (!mounted) return;
@@ -59,7 +54,9 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
         });
 
       } else {
-        final erroMsg = jsonDecode(response.body)['detail'] ?? 'Erro ao enviar e-mail';
+        final erroMsg = response.data is String
+            ? (jsonDecode(response.data))['detail'] ?? 'Erro ao enviar e-mail'
+            : response.data['detail'] ?? 'Erro ao enviar e-mail';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(erroMsg), backgroundColor: Colors.redAccent),
         );

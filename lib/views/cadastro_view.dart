@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:busao_do_role/services/dio_client.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import 'login_view.dart';
@@ -58,23 +58,17 @@ class _CadastroViewState extends State<CadastroView> {
     });
 
     try {
-      final url =
-          Uri.parse('http://localhost:8000/usuarios/cadastrar');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
+      final response = await DioClient.dio.post(
+        '/usuarios/cadastrar',
+        data: {
           'nome': nomeController.text.trim(),
           'cpf_cnpj': cpfController.text.trim(),
           'email': emailController.text.trim(),
           'senha': senhaController.text,
-        }),
+        },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +88,7 @@ class _CadastroViewState extends State<CadastroView> {
         String mensagem = 'Erro ao cadastrar';
 
         try {
-          final data = jsonDecode(response.body);
+          final data = response.data is String ? jsonDecode(response.data) : response.data;
 
           if (data['detail'] != null) {
             final detail = data['detail'];

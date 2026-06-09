@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:busao_do_role/services/api_client.dart';
+import 'package:busao_do_role/services/dio_client.dart';
 import 'package:intl/intl.dart';
 
 class DashboardTab extends StatefulWidget {
@@ -42,27 +42,25 @@ class _DashboardTabState extends State<DashboardTab> {
     });
 
     try {
-      String url = "/pedidos/dashboard";
-      List<String> params = [];
+      Map<String, String> queryParams = {};
 
       // Só envia filtro se NÃO for TODOS
       if (selectedVendedor != "TODOS") {
-        params.add("canal_venda=$selectedVendedor");
+        queryParams["canal_venda"] = selectedVendedor;
       }
 
       if (selectedPeriodo != "TODOS") {
-        params.add("periodo=$selectedPeriodo");
+        queryParams["periodo"] = selectedPeriodo;
       }
 
-      if (params.isNotEmpty) {
-        url += "?${params.join("&")}";
-      }
-
-      final response = await ApiClient.request(url);
-
-      final data = jsonDecode(
-        utf8.decode(response.bodyBytes),
+      final response = await DioClient.dio.get(
+        "/pedidos/dashboard",
+        queryParameters: queryParams,
       );
+
+      final data = response.data is String
+          ? jsonDecode(response.data)
+          : response.data;
 
       setState(() {
         vendedores = [
