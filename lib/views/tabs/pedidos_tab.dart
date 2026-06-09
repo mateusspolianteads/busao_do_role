@@ -83,7 +83,13 @@ class _PedidosTabState extends State<PedidosTab> {
 
   int _paginaAtual = 1;
   final int _limit = 10;
+  int _totalPedidos = 0;
   bool _hasMore = true;
+
+  int get _totalPaginas {
+    if (_totalPedidos == 0) return 1;
+    return (_totalPedidos / _limit).ceil();
+  }
 
   @override
   void initState() {
@@ -116,43 +122,67 @@ class _PedidosTabState extends State<PedidosTab> {
     }
   }
 
-  Future<void> _fetchPedidos() async {
+  Future<void> _fetchPedidos({int? pagina}) async {
     if (_eventoSelecionadoId == null) return;
+
+    final paginaParaBuscar = pagina ?? _paginaAtual;
 
     setState(() {
       _isLoadingPedidos = true;
       _hasErrorPedidos = false;
     });
 
-    int skip = (_paginaAtual - 1) * _limit;
+    int skip = (paginaParaBuscar - 1) * _limit;
 
     try {
       final response = await DioClient.dio.get(
         "/pedidos/evento/$_eventoSelecionadoId",
-        queryParameters: {'skip': skip, 'limit': _limit},
+        queryParameters: {
+          'skip': skip,
+          'limit': _limit,
+          'page': paginaParaBuscar,
+          'pagina': paginaParaBuscar,
+          'limite': _limit,
+        },
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse =
-            response.data is String ? json.decode(response.data) : response.data;
-        final List<dynamic> pedidosJson = jsonResponse['pedidos'];
+        final Map<String, dynamic> jsonResponse = response.data is String
+            ? json.decode(response.data)
+            : response.data;
+        final List<dynamic> pedidosJson = jsonResponse['pedidos'] ?? [];
         List<PedidoModel> novosPedidos = pedidosJson
             .map((data) => PedidoModel.fromJson(data as Map<String, dynamic>))
             .toList();
 
-        setState(() {
-          _pedidos = novosPedidos;
-          _hasMore = novosPedidos.length == _limit;
-          _isLoadingPedidos = false;
-        });
+        if (mounted) {
+          setState(() {
+            _pedidos = novosPedidos;
+            _paginaAtual =
+                paginaParaBuscar; // Atualiza o indicador de página apenas em caso de sucesso
+
+            if (jsonResponse.containsKey('total')) {
+              _totalPedidos = jsonResponse['total'] ?? 0;
+              _hasMore = _paginaAtual * _limit < _totalPedidos;
+            } else {
+              _hasMore = novosPedidos.length == _limit;
+              _totalPedidos = _hasMore
+                  ? _paginaAtual * _limit + 1
+                  : (_paginaAtual - 1) * _limit + novosPedidos.length;
+            }
+            _isLoadingPedidos = false;
+          });
+        }
       } else {
         throw Exception('Falha na API');
       }
     } catch (e) {
-      setState(() {
-        _isLoadingPedidos = false;
-        _hasErrorPedidos = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingPedidos = false;
+          _hasErrorPedidos = true;
+        });
+      }
     }
   }
 
@@ -162,6 +192,7 @@ class _PedidosTabState extends State<PedidosTab> {
     setState(() {
       _eventoSelecionadoId = eventoId;
       _paginaAtual = 1;
+      _totalPedidos = 0;
       _pedidos.clear();
     });
 
@@ -170,260 +201,21 @@ class _PedidosTabState extends State<PedidosTab> {
 
   void _proximaPagina() {
     if (_hasMore && !_isLoadingPedidos) {
-      setState(() => _paginaAtual++);
-      _fetchPedidos();
+      _fetchPedidos(pagina: _paginaAtual + 1);
     }
   }
 
   void _paginaAnterior() {
     if (_paginaAtual > 1 && !_isLoadingPedidos) {
-      setState(() => _paginaAtual--);
-      _fetchPedidos();
+      _fetchPedidos(pagina: _paginaAtual - 1);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _mostrarPopUpDetalhes(BuildContext context, PedidoModel pedido) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
-    final borderColor =
-        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
 
-    return Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Pedidos",
-              style: TextStyle(
-                  fontSize: 32, fontWeight: FontWeight.w800, color: textColor)),
-          Text("Filtre os pedidos por evento",
-              style: TextStyle(color: subtitleColor)),
-          const SizedBox(height: 24),
-          _isLoadingEventos
-              ? const SizedBox(
-                  height: 50,
-                  child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: CircularProgressIndicator()))
-              : _eventos.isEmpty
-                  ? const Text("Nenhum evento encontrado.",
-                      style: TextStyle(color: Colors.red))
-                  : Container(
-                      width: 350,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: _eventoSelecionadoId,
-                          hint: Text("Selecione um evento",
-                              style: TextStyle(color: subtitleColor)),
-                          icon: Icon(LucideIcons.chevronDown,
-                              color: subtitleColor, size: 20),
-                          dropdownColor: Theme.of(context).cardColor,
-                          isExpanded: true,
-                          style: TextStyle(color: textColor, fontSize: 16),
-                          items: _eventos.map((evento) {
-                            return DropdownMenuItem<int>(
-                              value: evento.id,
-                              child: Text(evento.nome,
-                                  overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (novoValor) {
-                            if (novoValor != null) {
-                              _mudarEvento(novoValor);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: borderColor),
-              ),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: _buildContent(
-                        isDark, textColor, subtitleColor, borderColor),
-                  ),
-                  Divider(color: borderColor, height: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                          onPressed: (_paginaAtual > 1 &&
-                                  !_isLoadingPedidos &&
-                                  _eventoSelecionadoId != null)
-                              ? _paginaAnterior
-                              : null,
-                          color: textColor,
-                          disabledColor: textColor.withOpacity(0.2),
-                        ),
-                        Text(
-                          "Página $_paginaAtual",
-                          style: TextStyle(
-                              color: textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                          onPressed: (_hasMore &&
-                                  !_isLoadingPedidos &&
-                                  _eventoSelecionadoId != null)
-                              ? _proximaPagina
-                              : null,
-                          color: textColor,
-                          disabledColor: textColor.withOpacity(0.2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(
-      bool isDark, Color textColor, Color subtitleColor, Color borderColor) {
-    if (_eventoSelecionadoId == null) return InitialState(isDark: isDark);
-    if (_hasErrorPedidos) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Erro ao carregar os pedidos.',
-                style: TextStyle(color: Colors.red)),
-            TextButton(
-                onPressed: _fetchPedidos, child: const Text('Tentar novamente'))
-          ],
-        ),
-      );
-    }
-    if (_isLoadingPedidos)
-      return const Center(child: CircularProgressIndicator());
-    if (_pedidos.isEmpty) return EmptyState(isDark: isDark);
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(24),
-      itemCount: _pedidos.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: borderColor, height: 32),
-      itemBuilder: (context, index) {
-        return PedidoListItem(
-          pedido: _pedidos[index],
-          textColor: textColor,
-          subtitleColor: subtitleColor,
-          isDark: isDark,
-        );
-      },
-    );
-  }
-}
-
-class InitialState extends StatelessWidget {
-  final bool isDark;
-  const InitialState({super.key, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final iconColor = isDark ? Colors.white10 : Colors.black12;
-    final emptyTextColor = isDark ? Colors.white54 : Colors.black54;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(LucideIcons.mousePointerClick, size: 60, color: iconColor),
-          const SizedBox(height: 16),
-          Text(
-            "Selecione um evento acima para carregar os pedidos",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: emptyTextColor,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class EmptyState extends StatelessWidget {
-  final bool isDark;
-  const EmptyState({super.key, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final iconColor = isDark ? Colors.white10 : Colors.black12;
-    final emptyTextColor = isDark ? Colors.white24 : Colors.black38;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(LucideIcons.shoppingCart, size: 60, color: iconColor),
-          const SizedBox(height: 10),
-          Text("Nenhum pedido para este evento",
-              style: TextStyle(color: emptyTextColor)),
-        ],
-      ),
-    );
-  }
-}
-
-class PedidoListItem extends StatelessWidget {
-  final PedidoModel pedido;
-  final Color textColor;
-  final Color subtitleColor;
-  final bool isDark;
-
-  const PedidoListItem({
-    super.key,
-    required this.pedido,
-    required this.textColor,
-    required this.subtitleColor,
-    required this.isDark,
-  });
-
-  String formatarData(String dataIso) {
-    if (dataIso.isEmpty) return "Data não informada";
-    try {
-      final dateTime = DateTime.parse(dataIso);
-      return DateFormat('dd MMM yyyy', 'pt_BR').format(dateTime);
-    } catch (e) {
-      return dataIso;
-    }
-  }
-
-  String formatarMoeda(double valor) {
-    final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return formatador.format(valor);
-  }
-
-  void _mostrarPopUpDetalhes(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -459,29 +251,20 @@ class PedidoListItem extends StatelessWidget {
                       width: 300),
                   _itemInfo("Evento", pedido.eventoNome, labelStyle, valStyle,
                       width: 210),
-                  _itemInfo("Data Venda", formatarData(pedido.dataVenda),
-                      labelStyle, valStyle,
-                      width: 210),
                   _itemInfo("Status Pedido", pedido.statusPedido, labelStyle,
                       valStyle,
                       width: 210),
-                  _itemInfo("Status Ingresso", pedido.statusIngresso,
-                      labelStyle, valStyle,
-                      width: 210),
                   _itemInfo("Lote", pedido.lote, labelStyle, valStyle,
                       width: 210),
-                  _itemInfo("Valor do Lote", formatarMoeda(pedido.valorLote),
-                      labelStyle, valStyle,
+                  _itemInfo(
+                      "Valor do Lote",
+                      "R\$ ${pedido.valorLote.toStringAsFixed(2)}",
+                      labelStyle,
+                      valStyle,
                       width: 210),
                   _itemInfo("Canal", pedido.canalVenda, labelStyle, valStyle,
                       width: 210),
                   _itemInfo("Método Pagamento", pedido.metodoPagamento,
-                      labelStyle, valStyle,
-                      width: 210),
-                  _itemInfo("Transferido", pedido.transferido ? "Sim" : "Não",
-                      labelStyle, valStyle,
-                      width: 210),
-                  _itemInfo("Aprovado", pedido.aprovado ? "Sim" : "Não",
                       labelStyle, valStyle,
                       width: 210),
                 ],
@@ -521,6 +304,229 @@ class PedidoListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Pedidos",
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
+          const SizedBox(height: 8),
+          _isLoadingEventos
+              ? const Center(
+                  child: SizedBox(
+                      height: 32,
+                      child: CircularProgressIndicator(strokeWidth: 2)))
+              : _eventos.isEmpty
+                  ? const Center(
+                      child: Text("Nenhum evento encontrado.",
+                          style: TextStyle(color: Colors.red, fontSize: 13)))
+                  : Container(
+                      width:
+                          double.infinity, // Responsivo: Ocupa 100% da largura
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 0), // Altura reduzida
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _eventoSelecionadoId,
+                          hint: Text("Selecione um evento",
+                              style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 13)), // Fonte menor
+                          icon: Icon(LucideIcons.chevronDown,
+                              color: subtitleColor, size: 16), // Ícone menor
+                          dropdownColor: Theme.of(context).cardColor,
+                          isExpanded: true,
+                          style: TextStyle(
+                              color: textColor, fontSize: 13), // Fonte menor
+                          items: _eventos.map((evento) {
+                            return DropdownMenuItem<int>(
+                              value: evento.id,
+                              child: Text(evento.nome,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13)),
+                            );
+                          }).toList(),
+                          onChanged: (novoValor) {
+                            if (novoValor != null) {
+                              _mudarEvento(novoValor);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                children: [
+                  // Barra de progresso linear no topo do container quando carrega background
+                  if (_isLoadingPedidos && _pedidos.isNotEmpty)
+                    LinearProgressIndicator(
+                      color: Theme.of(context).primaryColor,
+                      backgroundColor: Colors.transparent,
+                      minHeight: 2,
+                    )
+                  else
+                    const SizedBox(height: 2),
+                  Expanded(
+                    child: _buildContent(
+                        isDark, textColor, subtitleColor, borderColor),
+                  ),
+                  Divider(color: borderColor, height: 1),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(8),
+                          icon: const Icon(Icons.first_page, size: 18),
+                          onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
+                              ? () => _fetchPedidos(pagina: 1)
+                              : null,
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(8),
+                          icon: const Icon(Icons.chevron_left, size: 18),
+                          onPressed: (_paginaAtual > 1 && !_isLoadingPedidos)
+                              ? () => _fetchPedidos(pagina: _paginaAtual - 1)
+                              : null,
+                        ),
+
+                        // Aqui exibimos o contador de página e o total de registros
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            "Pág. $_paginaAtual de $_totalPaginas ($_totalPedidos itens)",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(8),
+                          icon: const Icon(Icons.chevron_right, size: 18),
+                          onPressed: (_paginaAtual < _totalPaginas &&
+                                  !_isLoadingPedidos)
+                              ? () => _fetchPedidos(pagina: _paginaAtual + 1)
+                              : null,
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(8),
+                          icon: const Icon(Icons.last_page, size: 18),
+                          onPressed: (_paginaAtual < _totalPaginas &&
+                                  !_isLoadingPedidos)
+                              ? () => _fetchPedidos(pagina: _totalPaginas)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(
+      bool isDark, Color textColor, Color subtitleColor, Color borderColor) {
+    if (_eventoSelecionadoId == null) return InitialState(isDark: isDark);
+    if (_hasErrorPedidos) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Erro ao carregar os pedidos.',
+                style: TextStyle(color: Colors.red)),
+            TextButton(
+                onPressed: () => _fetchPedidos(),
+                child: const Text('Tentar novamente'))
+          ],
+        ),
+      );
+    }
+    // Mostra indicador central apenas na primeira carga do evento
+    if (_isLoadingPedidos && _pedidos.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_pedidos.isEmpty) return EmptyState(isDark: isDark);
+
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      itemCount: _pedidos.length,
+      separatorBuilder: (context, index) =>
+          Divider(color: borderColor, height: 1),
+      itemBuilder: (context, index) {
+        final pedido = _pedidos[index];
+        return PedidoItemRow(
+          pedido: pedido,
+          textColor: textColor,
+          subtitleColor: subtitleColor,
+          onTap: () => _mostrarPopUpDetalhes(context, pedido),
+        );
+      },
+    );
+  }
+}
+
+class PedidoItemRow extends StatelessWidget {
+  final PedidoModel pedido;
+  final Color textColor;
+  final Color subtitleColor;
+  final VoidCallback onTap;
+
+  const PedidoItemRow({
+    super.key,
+    required this.pedido,
+    required this.textColor,
+    required this.subtitleColor,
+    required this.onTap,
+  });
+
+  String formatarData(String dataIso) {
+    if (dataIso.isEmpty) return "Data não informada";
+    try {
+      final dateTime = DateTime.parse(dataIso);
+      return DateFormat('dd MMM yyyy', 'pt_BR').format(dateTime);
+    } catch (e) {
+      return dataIso;
+    }
+  }
+
+  String formatarMoeda(double valor) {
+    final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    return formatador.format(valor);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     Color statusColor;
     switch (pedido.statusPedido.toLowerCase()) {
       case "aprovado":
@@ -537,23 +543,11 @@ class PedidoListItem extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: () => _mostrarPopUpDetalhes(context),
-      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(LucideIcons.receipt, color: textColor, size: 24),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,13 +557,20 @@ class PedidoListItem extends StatelessWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: textColor,
-                        fontSize: 16),
+                        fontSize: 15),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "#${pedido.id} • ${formatarData(pedido.dataVenda)}",
+                    "Lote: ${pedido.lote}",
+                    style: TextStyle(color: subtitleColor, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "Data: ${formatarData(pedido.dataVenda)}",
                     style: TextStyle(color: subtitleColor, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -609,6 +610,55 @@ class PedidoListItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class InitialState extends StatelessWidget {
+  final bool isDark;
+  const InitialState({super.key, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = isDark ? Colors.white10 : Colors.black12;
+    final emptyTextColor = isDark ? Colors.white54 : Colors.black54;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(LucideIcons.mousePointerClick, size: 48, color: iconColor),
+          const SizedBox(height: 12),
+          Text(
+            "Selecione um evento acima para carregar os pedidos",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: emptyTextColor, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EmptyState extends StatelessWidget {
+  final bool isDark;
+  const EmptyState({super.key, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = isDark ? Colors.white10 : Colors.black12;
+    final emptyTextColor = isDark ? Colors.white24 : Colors.black38;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(LucideIcons.shoppingCart, size: 48, color: iconColor),
+          const SizedBox(height: 10),
+          Text("Nenhum pedido para este evento",
+              style: TextStyle(color: emptyTextColor, fontSize: 14)),
+        ],
       ),
     );
   }
