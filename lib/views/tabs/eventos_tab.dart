@@ -24,6 +24,7 @@ class _EventosTabState extends State<EventosTab> {
   bool carregandoClientes = false;
   bool isLoading = true;
   bool isSaving = false;
+  bool isUploadingImage = false;
 
   int paginaAtual = 1;
   final int clientesPorPagina = 10;
@@ -37,6 +38,7 @@ class _EventosTabState extends State<EventosTab> {
   String search = "";
   Timer? _debounce;
   int? categoriaSelecionada;
+  String? _imagemUrl;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -104,8 +106,7 @@ class _EventosTabState extends State<EventosTab> {
           }
         });
       });
-    } catch (e, s) {
-      debugPrint("ERRO FETCH EVENTOS: $e\n$s");
+    } catch (_) {
       if (mounted) {
         setState(() => eventos = []);
       }
@@ -144,6 +145,78 @@ class _EventosTabState extends State<EventosTab> {
     }
   }
 
+  Future<void> _fazerUploadImagem() async {
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+    } catch (e) {
+      debugPrint("Erro ao selecionar imagem: $e");
+      return;
+    }
+
+    if (result == null) return;
+
+    setState(() => isUploadingImage = true);
+
+    try {
+      final file = result.files.first;
+      MultipartFile multipartFile;
+
+      if (file.bytes != null) {
+        multipartFile =
+            MultipartFile.fromBytes(file.bytes!, filename: file.name);
+      } else if (file.path != null) {
+        multipartFile =
+            await MultipartFile.fromFile(file.path!, filename: file.name);
+      } else {
+        throw Exception("Não foi possível ler os dados da imagem selecionada.");
+      }
+
+      FormData formData = FormData.fromMap({
+        "file": multipartFile,
+      });
+
+      final response = await DioClient.dio.post("/upload", data: formData);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final dados =
+            response.data is String ? jsonDecode(response.data) : response.data;
+
+        if (dados['url'] != null) {
+          setState(() {
+            _imagemUrl = dados['url'];
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text("Imagem enviada com sucesso!"),
+                  backgroundColor: Colors.green),
+            );
+          }
+        } else if (dados['error'] != null) {
+          throw Exception(dados['error']);
+        }
+      } else {
+        throw Exception("Falha ao processar upload no servidor.");
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Erro ao enviar imagem: ${e.toString()}"),
+              backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isUploadingImage = false);
+      }
+    }
+  }
+
   Future<void> _salvarEvento() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -165,6 +238,7 @@ class _EventosTabState extends State<EventosTab> {
       "data_evento": dataFormatada,
       "local": _localController.text,
       "valor_passagem": double.parse(_valorController.text),
+      "imagem": _imagemUrl,
     };
 
     try {
@@ -282,7 +356,10 @@ class _EventosTabState extends State<EventosTab> {
                   ? []
                   : [
                       TextButton(
-                        onPressed: () => Navigator.pop(dialogContext),
+                        onPressed: () {
+                          if (dialogContext.mounted)
+                            Navigator.pop(dialogContext);
+                        },
                         child: const Text("Cancelar"),
                       ),
                       ElevatedButton(
@@ -297,39 +374,44 @@ class _EventosTabState extends State<EventosTab> {
                             );
 
                             if (response.statusCode == 200) {
-                              if (!mounted) return;
+                              if (mounted) {
+                                setState(() {
+                                  paginaAtual = 1;
+                                  search = "";
+                                  clientes.clear();
+                                  totalClientes = 0;
+                                  carregandoClientes = false;
+                                });
+                              }
 
-                              setState(() {
-                                paginaAtual = 1;
-                                search = "";
-                                clientes.clear();
-                                totalClientes = 0;
-                                carregandoClientes = false;
-                              });
+                              if (dialogContext.mounted) {
+                                Navigator.pop(dialogContext);
+                              }
 
-                              Navigator.pop(dialogContext);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      "Passageiros removidos com sucesso!"),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        "Passageiros removidos com sucesso!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
 
                               await Future.delayed(const Duration(seconds: 2));
 
-                              if (!mounted) return;
-
-                              await _fetchClientesDoEvento(
-                                eventoSelecionado!['id'],
-                                pagina: 1,
-                              );
+                              if (mounted) {
+                                await _fetchClientesDoEvento(
+                                  eventoSelecionado!['id'],
+                                  pagina: 1,
+                                );
+                              }
                             }
                           } catch (e) {
-                            if (mounted) {
+                            if (dialogContext.mounted) {
                               Navigator.pop(dialogContext);
-
+                            }
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(e.toString()),
@@ -364,12 +446,15 @@ class _EventosTabState extends State<EventosTab> {
 
     if (result == null) return;
     bool modalAberto = false;
+    BuildContext? dialogCtx;
 
     try {
+      if (!mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext dialogContext) {
+          dialogCtx = dialogContext;
           final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
           final textColor = isDark ? Colors.white : Colors.black;
 
@@ -395,7 +480,8 @@ class _EventosTabState extends State<EventosTab> {
                   Text("Processando dados no servidor...",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: textColor.withOpacity(0.6), fontSize: 12)),
+                          color: textColor.withValues(alpha: 0.6),
+                          fontSize: 12)),
                 ],
               ),
             ),
@@ -426,35 +512,41 @@ class _EventosTabState extends State<EventosTab> {
       final response = await DioClient.dio
           .post("/pedidos/importar-planilha", data: formData);
 
-      if (modalAberto && mounted) {
-        Navigator.pop(context);
+      if (modalAberto && dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.pop(dialogCtx!);
         modalAberto = false;
       }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         await Future.delayed(const Duration(seconds: 1));
-        setState(() {
-          paginaAtual = 1;
-          search = "";
-          clientes = [];
-        });
-        await _fetchClientesDoEvento(eventoSelecionado!['id']);
+        if (mounted) {
+          setState(() {
+            paginaAtual = 1;
+            search = "";
+            clientes = [];
+          });
+          await _fetchClientesDoEvento(eventoSelecionado!['id']);
+        }
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Planilha importada com sucesso!"),
-              backgroundColor: Colors.green),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Planilha importada com sucesso!"),
+                backgroundColor: Colors.green),
+          );
+        }
       }
     } catch (e) {
-      if (modalAberto && mounted) Navigator.pop(context);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text("Erro ao importar planilha: $e"),
-            backgroundColor: Colors.red),
-      );
+      if (modalAberto && dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.pop(dialogCtx!);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Erro ao importar planilha: $e"),
+              backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -483,7 +575,7 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _fetchClientesDoEvento(int eventoId, {int? pagina}) async {
     final paginaParaBuscar = pagina ?? paginaAtual;
-    setState(() => carregandoClientes = true);
+    if (mounted) setState(() => carregandoClientes = true);
 
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -534,7 +626,9 @@ class _EventosTabState extends State<EventosTab> {
     String? arquivoGerado;
     String? resumoImportacao;
 
-    showDialog(
+    if (!mounted) return;
+
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
@@ -558,7 +652,7 @@ class _EventosTabState extends State<EventosTab> {
                     final data = response.data is String
                         ? json.decode(response.data)
                         : response.data;
-                    if (Navigator.canPop(dialogContext)) {
+                    if (dialogContext.mounted) {
                       setModalState(() {
                         exportando = false;
                         arquivoGerado =
@@ -566,16 +660,20 @@ class _EventosTabState extends State<EventosTab> {
                       });
                     }
                   } else {
-                    setModalState(() {
-                      exportando = false;
-                      erroMensagem = "Erro no processamento do servidor.";
-                    });
+                    if (dialogContext.mounted) {
+                      setModalState(() {
+                        exportando = false;
+                        erroMensagem = "Erro no processamento do servidor.";
+                      });
+                    }
                   }
                 } catch (e) {
-                  setModalState(() {
-                    exportando = false;
-                    erroMensagem = e.toString();
-                  });
+                  if (dialogContext.mounted) {
+                    setModalState(() {
+                      exportando = false;
+                      erroMensagem = e.toString();
+                    });
+                  }
                 }
               }();
             }
@@ -627,7 +725,8 @@ class _EventosTabState extends State<EventosTab> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    if (Navigator.canPop(dialogContext)) {
+                    if (dialogContext.mounted &&
+                        Navigator.canPop(dialogContext)) {
                       Navigator.pop(dialogContext);
                     }
                   },
@@ -668,19 +767,23 @@ class _EventosTabState extends State<EventosTab> {
                               setState(() => paginaAtual = 1);
                               await _fetchClientesDoEvento(idEvento);
                             }
-                            setModalState(() {
-                              importando = false;
-                              importacaoConcluida = true;
-                              resumoImportacao =
-                                  "Clientes sincronizados com sucesso!";
-                            });
+                            if (dialogContext.mounted) {
+                              setModalState(() {
+                                importando = false;
+                                importacaoConcluida = true;
+                                resumoImportacao =
+                                    "Clientes sincronizados com sucesso!";
+                              });
+                            }
                           }
                         }
                       } catch (e) {
-                        setModalState(() {
-                          importando = false;
-                          erroMensagem = e.toString();
-                        });
+                        if (dialogContext.mounted) {
+                          setModalState(() {
+                            importando = false;
+                            erroMensagem = e.toString();
+                          });
+                        }
                       }
                     },
                     child: const Text("Importar para o App"),
@@ -705,12 +808,14 @@ class _EventosTabState extends State<EventosTab> {
       _dataController.text = evento['data_evento'] ?? '';
       _localController.text = evento['local'] ?? '';
       _valorController.text = evento['valor_passagem']?.toString() ?? '';
+      _imagemUrl = evento['imagem'];
     } else {
       _nomeController.clear();
       _dataController.clear();
       _localController.clear();
       _valorController.clear();
       categoriaSelecionada = null;
+      _imagemUrl = null;
     }
   }
 
@@ -780,8 +885,8 @@ class _EventosTabState extends State<EventosTab> {
                 onPressed: () => _abrirFormulario(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.black.withOpacity(0.05),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.all(16),
@@ -831,17 +936,30 @@ class _EventosTabState extends State<EventosTab> {
   Widget _buildEventoCard(Map evento) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = Theme.of(context).cardColor;
-    final borderColor =
-        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.1);
     final textColor = isDark ? Colors.white : Colors.black;
 
     String dataDisplay = evento['data_evento'] ?? '--/--/----';
-    if (dataDisplay.contains('T')) {
-      try {
-        final d = DateTime.parse(dataDisplay);
+    Color dataColor = Colors.green;
+
+    try {
+      if (evento['data_evento'] != null) {
+        final d = DateTime.parse(evento['data_evento']);
         dataDisplay =
             "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
-      } catch (_) {}
+        dataColor = d.isBefore(DateTime.now()) ? Colors.red : Colors.green;
+      }
+    } catch (_) {
+      if (dataDisplay.contains('T')) {
+        try {
+          final d = DateTime.parse(dataDisplay);
+          dataDisplay =
+              "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+          dataColor = d.isBefore(DateTime.now()) ? Colors.red : Colors.green;
+        } catch (_) {}
+      }
     }
 
     return InkWell(
@@ -948,8 +1066,8 @@ class _EventosTabState extends State<EventosTab> {
                           size: 14, color: Color(0xFFB30000)),
                       const SizedBox(width: 6),
                       Text(dataDisplay,
-                          style: const TextStyle(
-                              color: Colors.green,
+                          style: TextStyle(
+                              color: dataColor,
                               fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -958,7 +1076,7 @@ class _EventosTabState extends State<EventosTab> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6)),
                     child: Text("R\$ ${evento['valor_passagem'] ?? '0.0'}",
                         style: const TextStyle(
@@ -978,8 +1096,9 @@ class _EventosTabState extends State<EventosTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final cardColor = Theme.of(context).cardColor;
-    final borderColor =
-        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.1);
 
     return Padding(
       padding: EdgeInsets.all(isMobile ? 20 : 40),
@@ -1014,6 +1133,73 @@ class _EventosTabState extends State<EventosTab> {
                   child: ListView(
                     shrinkWrap: true,
                     children: [
+                      InkWell(
+                        onTap: isUploadingImage ? null : _fazerUploadImagem,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 150,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.02)
+                                : Colors.black.withValues(alpha: 0.02),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: isUploadingImage
+                              ? const Center(child: CircularProgressIndicator())
+                              : _imagemUrl != null && _imagemUrl!.isNotEmpty
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(11),
+                                      child: Stack(
+                                        children: [
+                                          Positioned.fill(
+                                            child: Image.network(_imagemUrl!,
+                                                fit: BoxFit.cover),
+                                          ),
+                                          Positioned(
+                                            right: 8,
+                                            top: 8,
+                                            child: CircleAvatar(
+                                              backgroundColor: Colors.black
+                                                  .withValues(alpha: 0.6),
+                                              radius: 18,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                icon: const Icon(
+                                                    LucideIcons.trash2,
+                                                    color: Colors.red,
+                                                    size: 16),
+                                                onPressed: () => setState(
+                                                    () => _imagemUrl = null),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  : Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(LucideIcons.image,
+                                            size: 32,
+                                            color: isDark
+                                                ? Colors.white54
+                                                : Colors.black54),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          "Clique para adicionar uma imagem",
+                                          style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white54
+                                                  : Colors.black54,
+                                              fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                        ),
+                      ),
                       TextFormField(
                         controller: _nomeController,
                         style: TextStyle(color: textColor),
@@ -1025,7 +1211,7 @@ class _EventosTabState extends State<EventosTab> {
                       ),
                       const SizedBox(height: 20),
                       DropdownButtonFormField<int>(
-                        value: categoriaSelecionada,
+                        initialValue: categoriaSelecionada,
                         dropdownColor: cardColor,
                         style: TextStyle(color: textColor),
                         decoration:
@@ -1110,8 +1296,8 @@ class _EventosTabState extends State<EventosTab> {
       prefixIcon: Icon(icon, color: isDark ? Colors.white54 : Colors.black54),
       filled: true,
       fillColor: isDark
-          ? Colors.white.withOpacity(0.02)
-          : Colors.black.withOpacity(0.02),
+          ? Colors.white.withValues(alpha: 0.02)
+          : Colors.black.withValues(alpha: 0.02),
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
     );
@@ -1124,8 +1310,7 @@ class _EventosTabState extends State<EventosTab> {
 
     return Center(
       child: Container(
-        constraints: const BoxConstraints(
-            maxWidth: 1100), // Largura máxima expandida ideal para iPads/Web
+        constraints: const BoxConstraints(maxWidth: 1100),
         padding:
             EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 20),
         child: Column(
@@ -1223,7 +1408,7 @@ class _EventosTabState extends State<EventosTab> {
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                       color: isDark
-                          ? Colors.white.withOpacity(0.08)
+                          ? Colors.white.withValues(alpha: 0.08)
                           : Colors.black12),
                 ),
                 child: Column(
@@ -1233,8 +1418,8 @@ class _EventosTabState extends State<EventosTab> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.02)
-                            : Colors.black.withOpacity(0.02),
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.02),
                         border: Border(
                             bottom: BorderSide(
                                 color:
@@ -1290,7 +1475,7 @@ class _EventosTabState extends State<EventosTab> {
                                         ),
                                       )
                                     : LayoutBuilder(
-                                        builder: (context, tableConstraints) {
+                                        builder: (context, _) {
                                           return Column(
                                             children: List.generate(
                                               clientesPorPagina,
@@ -1317,11 +1502,13 @@ class _EventosTabState extends State<EventosTab> {
                                                             bottom: BorderSide(
                                                               color: isDark
                                                                   ? Colors.white
-                                                                      .withOpacity(
-                                                                          0.04)
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.04)
                                                                   : Colors.black
-                                                                      .withOpacity(
-                                                                          0.04),
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.04),
                                                               width: 0.5,
                                                             ),
                                                           ),
@@ -1466,8 +1653,8 @@ class _EventosTabState extends State<EventosTab> {
         height: 36,
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.03)
-              : Colors.black.withOpacity(0.03),
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
         ),
@@ -1680,8 +1867,8 @@ class CampoClienteCard extends StatelessWidget {
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: isDark
-                          ? Colors.white.withOpacity(0.03)
-                          : Colors.black.withOpacity(0.03),
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.black.withValues(alpha: 0.03),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
                       enabledBorder: OutlineInputBorder(
