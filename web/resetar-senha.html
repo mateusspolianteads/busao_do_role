@@ -11,13 +11,13 @@
 </head>
 <body>
 
-  <div class="auth-container">
+  <div class="auth-container" id="form-container">
     <div class="auth-header">
       <h1>Criar nova senha</h1>
       <p>Digite sua nova senha abaixo. Escolha uma combinação forte e segura.</p>
     </div>
 
-    <form>
+    <form id="reset-form">
       <div class="form-group">
         <label for="senha">Nova senha</label>
         <div class="input-wrapper">
@@ -38,6 +38,28 @@
         Redefinir Senha
       </button>
     </form>
+  </div>
+
+  <div class="auth-container" id="success-container" style="display: none;">
+    <div class="auth-header">
+      <h1>Senha redefinida com sucesso!</h1>
+      <p>Sua senha foi alterada e já está pronta para uso.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <i
+        data-lucide="check-circle"
+        style="width: 72px; height: 72px; color: #22c55e;"
+      ></i>
+
+      <p style="margin-top: 20px; font-size: 16px; line-height: 1.6;">
+        Agora você já pode voltar para o aplicativo e fazer login com sua nova senha.
+      </p>
+
+      <p style="margin-top: 10px; color: #777;">
+        Caso o aplicativo esteja aberto, feche e abra novamente antes de entrar.
+      </p>
+    </div>
   </div>
 
   <script>

@@ -290,39 +290,51 @@ class _EventosTabState extends State<EventosTab> {
                             backgroundColor: Colors.red),
                         onPressed: () async {
                           setModalState(() => excluindo = true);
+
                           try {
                             final response = await DioClient.dio.delete(
-                                "/pedidos/evento/${eventoSelecionado!['id']}");
+                              "/pedidos/evento/${eventoSelecionado!['id']}",
+                            );
+
                             if (response.statusCode == 200) {
-                              if (mounted) {
-                                setState(() {
-                                  paginaAtual = 1;
-                                  search = "";
-                                  clientes = [];
-                                  totalClientes = 0;
-                                });
-                              }
-                              await Future.delayed(
-                                  const Duration(milliseconds: 500));
-                              if (mounted) Navigator.pop(dialogContext);
-                              if (mounted) {
-                                _fetchClientesDoEvento(
-                                    eventoSelecionado!['id']);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          "Passageiros removidos com sucesso!"),
-                                      backgroundColor: Colors.green),
-                                );
-                              }
+                              if (!mounted) return;
+
+                              setState(() {
+                                paginaAtual = 1;
+                                search = "";
+                                clientes.clear();
+                                totalClientes = 0;
+                                carregandoClientes = false;
+                              });
+
+                              Navigator.pop(dialogContext);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      "Passageiros removidos com sucesso!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+
+                              await Future.delayed(const Duration(seconds: 2));
+
+                              if (!mounted) return;
+
+                              await _fetchClientesDoEvento(
+                                eventoSelecionado!['id'],
+                                pagina: 1,
+                              );
                             }
                           } catch (e) {
                             if (mounted) {
                               Navigator.pop(dialogContext);
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text(e.toString()),
-                                    backgroundColor: Colors.red),
+                                  content: Text(e.toString()),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
                             }
                           }
@@ -1250,84 +1262,120 @@ class _EventosTabState extends State<EventosTab> {
                       ),
                     ),
                     Expanded(
-                      child: (carregandoClientes && clientes.isEmpty)
-                          ? const Center(child: CircularProgressIndicator())
-                          : clientes.isEmpty
-                              ? Center(
-                                  child: Text("Nenhum cliente encontrado",
-                                      style: TextStyle(
-                                          color: isDark
-                                              ? Colors.white70
-                                              : Colors.black87,
-                                          fontSize: 14)),
-                                )
-                              : LayoutBuilder(
-                                  builder: (context, tableConstraints) {
-                                    return Column(
-                                      children: List.generate(clientesPorPagina,
-                                          (index) {
-                                        if (index < clientes.length) {
-                                          final cliente = clientes[index];
-                                          return Expanded(
-                                            child: InkWell(
-                                              onTap: () =>
-                                                  _mostrarDetalhesCliente(
-                                                      cliente),
-                                              child: Container(
-                                                width: double.infinity,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 20),
-                                                decoration: BoxDecoration(
-                                                  border: Border(
-                                                      bottom: BorderSide(
-                                                          color: isDark
-                                                              ? Colors.white
-                                                                  .withOpacity(
-                                                                      0.04)
-                                                              : Colors.black
-                                                                  .withOpacity(
-                                                                      0.04),
-                                                          width: 0.5)),
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        cliente['nome'] ?? "",
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                            color: textColor,
-                                                            fontSize: 15,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w500),
+                      child: Column(
+                        children: [
+                          if (carregandoClientes && clientes.isNotEmpty)
+                            LinearProgressIndicator(
+                              color: Theme.of(context).primaryColor,
+                              backgroundColor: Colors.transparent,
+                              minHeight: 2,
+                            )
+                          else
+                            const SizedBox(height: 2),
+                          Expanded(
+                            child: (carregandoClientes && clientes.isEmpty)
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : clientes.isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          "Nenhum cliente encontrado",
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? Colors.white70
+                                                : Colors.black87,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      )
+                                    : LayoutBuilder(
+                                        builder: (context, tableConstraints) {
+                                          return Column(
+                                            children: List.generate(
+                                              clientesPorPagina,
+                                              (index) {
+                                                if (index < clientes.length) {
+                                                  final cliente =
+                                                      clientes[index];
+
+                                                  return Expanded(
+                                                    child: InkWell(
+                                                      onTap: () =>
+                                                          _mostrarDetalhesCliente(
+                                                              cliente),
+                                                      child: Container(
+                                                        width: double.infinity,
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 20,
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          border: Border(
+                                                            bottom: BorderSide(
+                                                              color: isDark
+                                                                  ? Colors.white
+                                                                      .withOpacity(
+                                                                          0.04)
+                                                                  : Colors.black
+                                                                      .withOpacity(
+                                                                          0.04),
+                                                              width: 0.5,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                cliente['nome'] ??
+                                                                    "",
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style:
+                                                                    TextStyle(
+                                                                  color:
+                                                                      textColor,
+                                                                  fontSize: 15,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Icon(
+                                                              LucideIcons
+                                                                  .chevronRight,
+                                                              size: 16,
+                                                              color: isDark
+                                                                  ? Colors
+                                                                      .white30
+                                                                  : Colors
+                                                                      .black26,
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
-                                                    Icon(
-                                                        LucideIcons
-                                                            .chevronRight,
-                                                        size: 16,
-                                                        color: isDark
-                                                            ? Colors.white30
-                                                            : Colors.black26),
-                                                  ],
-                                                ),
-                                              ),
+                                                  );
+                                                }
+
+                                                return const Expanded(
+                                                  child: SizedBox(
+                                                    width: double.infinity,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           );
-                                        }
-
-                                        // Linhas fantasmas estruturais esticadas para preencher o espaço do iPad
-                                        return const Expanded(
-                                          child:
-                                              SizedBox(width: double.infinity),
-                                        );
-                                      }),
-                                    );
-                                  },
-                                ),
+                                        },
+                                      ),
+                          ),
+                        ],
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),

@@ -1,8 +1,6 @@
 const API_URL =
   window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"
-    ? "http://127.0.0.1:8000"
-    : "https://busaorole.fwt.app.br";
+  window.location.hostname === "https://busaorole.fwt.app.br"
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form");
@@ -66,40 +64,55 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.querySelector(".auth-container");
 
         container.innerHTML = `
-                    <div style="text-align:center;padding:20px 0;">
-                        <i data-lucide="check-circle"
-                           style="color:#2ecc71;width:64px;height:64px;margin-bottom:24px;display:inline-block;">
-                        </i>
+          <div style="text-align:center;padding:20px 0;">
+            <i
+              data-lucide="check-circle"
+              style="
+                color:#22c55e;
+                width:72px;
+                height:72px;
+                margin-bottom:24px;
+                display:inline-block;
+              ">
+            </i>
 
-                        <h1 style="
-                            font-size:24px;
-                            font-weight:800;
-                            margin-bottom:12px;
-                            color:#ffffff;
-                            letter-spacing:-0.5px;
-                        ">
-                            Senha redefinida com sucesso
-                        </h1>
+            <h1 style="
+              font-size:28px;
+              font-weight:800;
+              margin-bottom:12px;
+              color:#ffffff;
+              letter-spacing:-0.5px;
+            ">
+              Senha redefinida com sucesso!
+            </h1>
 
-                        <p style="
-                            color:var(--text-dim);
-                            font-size:15px;
-                            line-height:1.5;
-                        ">
-                            Você já pode fechar esta página e fazer login novamente no aplicativo.
-                        </p>
-                    </div>
-                `;
+            <p style="
+              color:var(--text-dim);
+              font-size:15px;
+              line-height:1.7;
+              max-width:420px;
+              margin:0 auto;
+            ">
+              Sua senha foi alterada com sucesso.
+            </p>
+
+            <p style="
+              color:var(--text-dim);
+              font-size:15px;
+              line-height:1.7;
+              max-width:420px;
+              margin:16px auto 0;
+            ">
+              Agora você já pode voltar para o aplicativo e fazer login utilizando sua nova senha.
+            </p>
+          </div>
+        `;
 
         lucide.createIcons();
-
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
       } else {
         mostrarMensagem(
           data.detail || data.mensagem || "Erro ao redefinir senha",
-          "erro",
+          "erro"
         );
 
         button.disabled = false;
