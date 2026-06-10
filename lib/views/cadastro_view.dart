@@ -185,8 +185,8 @@ class _CadastroViewState extends State<CadastroView> {
                             children: [
                               const SizedBox(height: 0),
                               Container(
-                                height: alturaTela * 0.28,
-                                width: alturaTela * 0.28,
+                                height: alturaTela * 0.25,
+                                width: alturaTela * 0.25,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: RadialGradient(

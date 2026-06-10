@@ -273,18 +273,16 @@ class _HomeViewState extends State<HomeView> {
                         ],
                       ),
                       Transform.scale(
-                        scale: 0.8,
-                        child: Switch(
-                          value: isDark,
-                          activeThumbColor: const Color(0xFFB30000),
-                          activeTrackColor:
-                              const Color(0xFFB30000).withValues(alpha: 0.3),
-                          // 💡 Agora aciona diretamente o ThemeController sem lag
-                          onChanged: (value) {
-                            ThemeController.toggleTheme(value);
-                          },
-                        ),
-                      ),
+                          scale: 0.8,
+                          child: Switch(
+                            value: ThemeController.isDarkMode,
+                            activeThumbColor: const Color(0xFFB30000),
+                            activeTrackColor:
+                                const Color(0xFFB30000).withValues(alpha: 0.3),
+                            onChanged: (value) async {
+                              await ThemeController.toggleTheme(value);
+                            },
+                          )),
                     ],
                   ),
                 ),

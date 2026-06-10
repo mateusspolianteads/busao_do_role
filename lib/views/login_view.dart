@@ -130,8 +130,8 @@ class _LoginViewState extends State<LoginView> {
                                   const SizedBox(height: 0),
                                   // Container com efeito de brilho de fundo (Glow Effect)
                                   Container(
-                                    height: alturaTela * 0.28,
-                                    width: alturaTela * 0.28,
+                                    height: alturaTela * 0.25,
+                                    width: alturaTela * 0.25,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       gradient: RadialGradient(
