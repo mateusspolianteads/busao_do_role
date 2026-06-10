@@ -660,18 +660,43 @@ class _EventosTabState extends State<EventosTab> {
                       });
                     }
                   } else {
+                    String mensagem = "Erro no processamento do servidor.";
+                    try {
+                      final dados = response.data is String
+                          ? jsonDecode(response.data)
+                          : response.data;
+                      if (dados is Map && dados['detail'] != null) {
+                        mensagem = dados['detail'].toString();
+                      }
+                    } catch (_) {}
+
                     if (dialogContext.mounted) {
                       setModalState(() {
                         exportando = false;
-                        erroMensagem = "Erro no processamento do servidor.";
+                        erroMensagem = mensagem;
                       });
                     }
                   }
                 } catch (e) {
+                  String mensagemErro = "Erro ao exportar planilha.";
+
+                  if (e is DioException && e.response != null) {
+                    try {
+                      final dados = e.response!.data is String
+                          ? jsonDecode(e.response!.data)
+                          : e.response!.data;
+                      if (dados is Map && dados['detail'] != null) {
+                        mensagemErro = dados['detail'].toString();
+                      }
+                    } catch (_) {}
+                  } else {
+                    mensagemErro = e.toString().replaceFirst('Exception: ', '');
+                  }
+
                   if (dialogContext.mounted) {
                     setModalState(() {
                       exportando = false;
-                      erroMensagem = e.toString();
+                      erroMensagem = mensagemErro;
                     });
                   }
                 }
@@ -1067,8 +1092,7 @@ class _EventosTabState extends State<EventosTab> {
                       const SizedBox(width: 6),
                       Text(dataDisplay,
                           style: TextStyle(
-                              color: dataColor,
-                              fontWeight: FontWeight.bold)),
+                              color: dataColor, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 12),
