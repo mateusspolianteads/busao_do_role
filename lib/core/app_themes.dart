@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 
-/// Constantes de tema para evitar recriação desnecessária
 class AppThemes {
   AppThemes._(); // Constructor privado para evitar instanciação
 
