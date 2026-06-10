@@ -7,6 +7,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import 'login_view.dart';
 
+import 'package:dio/dio.dart';
+
 class CadastroView extends StatefulWidget {
   const CadastroView({super.key});
 
@@ -26,23 +28,22 @@ class _CadastroViewState extends State<CadastroView> {
   bool ocultarConfirmarSenha = true;
 
   Future<void> cadastrarUsuario() async {
-    // 1. VALIDAÇÃO DE CAMPOS VAZIOS: Verifica localmente antes de qualquer ação
+    if (carregando) return;
+
     if (nomeController.text.trim().isEmpty ||
         cpfController.text.trim().isEmpty ||
         emailController.text.trim().isEmpty ||
         senhaController.text.trim().isEmpty ||
         confirmarSenhaController.text.trim().isEmpty) {
-      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, preencha todos os campos obrigatórios!'),
           backgroundColor: Colors.red,
         ),
       );
-      return; // Para a execução e não chama a API
+      return;
     }
 
-    // 2. VALIDAÇÃO DE SENHAS COINCIDENTES
     if (senhaController.text != confirmarSenhaController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -58,66 +59,83 @@ class _CadastroViewState extends State<CadastroView> {
     });
 
     try {
+      final payload = {
+        "nome": nomeController.text.trim(),
+        "cpf_cnpj": cpfController.text.trim(),
+        "email": emailController.text.trim(),
+        "senha": senhaController.text.trim(),
+      };
+
       final response = await DioClient.dio.post(
-        '/usuarios/cadastrar',
-        data: {
-          'nome': nomeController.text.trim(),
-          'cpf_cnpj': cpfController.text.trim(),
-          'email': emailController.text.trim(),
-          'senha': senhaController.text,
-        },
+        "/usuarios/cadastrar",
+        data: payload,
+        options: Options(
+          contentType: Headers.jsonContentType,
+        ),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        if (!mounted) return;
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cadastro realizado com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cadastro realizado com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const LoginView(),
-          ),
-        );
-      } else {
-        String mensagem = 'Erro ao cadastrar';
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const LoginView(),
+        ),
+      );
+    } on DioException catch (e) {
+      print('STATUS: ${e.response?.statusCode}');
+      print('DATA: ${e.response?.data}');
+      print('REQUEST: ${e.requestOptions.data}');
 
-        try {
-          final data = response.data is String ? jsonDecode(response.data) : response.data;
+      String mensagem = 'Erro ao cadastrar';
 
-          if (data['detail'] != null) {
-            final detail = data['detail'];
+      final data = e.response?.data;
 
-            if (detail is String) {
-              mensagem = detail;
-            } else if (detail is List && detail.isNotEmpty) {
-              mensagem = detail[0]['msg'] ?? 'Erro de validação';
+      if (data is Map) {
+        final detail = data['detail'];
+
+        if (detail is String) {
+          mensagem = detail;
+        } else if (detail is List && detail.isNotEmpty) {
+          mensagem = detail.map((item) {
+            if (item is Map) {
+              final campo = item['loc'] is List && item['loc'].length > 1
+                  ? item['loc'].last.toString()
+                  : '';
+
+              final erro = item['msg']?.toString() ?? '';
+
+              return campo.isNotEmpty ? '$campo: $erro' : erro;
             }
-          }
-        } catch (_) {
-          mensagem = 'Erro ao cadastrar (${response.statusCode})';
-        }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.red,
-            content: Text(
-              mensagem,
-              style: const TextStyle(color: Colors.white), // Alterado para branco para melhor leitura
-            ),
-          ),
-        );
+            return item.toString();
+          }).join('\n');
+        }
       }
-    } catch (e) {
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro de conexão: $e'),
           backgroundColor: Colors.red,
+          content: Text(mensagem),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Erro: $e'),
         ),
       );
     } finally {
@@ -149,15 +167,19 @@ class _CadastroViewState extends State<CadastroView> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Reduzido o padding externo vertical
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 20), // Reduzido o padding externo vertical
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360), // Largura igualada ao Login
+              constraints: const BoxConstraints(
+                  maxWidth: 360), // Largura igualada ao Login
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12), // Container mais justo sem padding no topo
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20,
+                        12), // Container mais justo sem padding no topo
                     decoration: BoxDecoration(
                       color: const Color(0xFF121212),
                       borderRadius: BorderRadius.circular(20),
@@ -171,16 +193,17 @@ class _CadastroViewState extends State<CadastroView> {
                       children: [
                         // Logo Maximizada (Preenche as laterais perfeitamente)
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 0, vertical: 0),
                           child: Image.asset(
                             'assets/img/logo_branca.png',
                             width: double.infinity,
                             fit: BoxFit.fitWidth,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 5),
-                        
+
                         const Text(
                           "Crie sua conta",
                           textAlign: TextAlign.center,
@@ -190,9 +213,9 @@ class _CadastroViewState extends State<CadastroView> {
                             color: Colors.white,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 2),
-                        
+
                         const Text(
                           "Preencha os dados para começar a usar.",
                           textAlign: TextAlign.center,
@@ -201,9 +224,11 @@ class _CadastroViewState extends State<CadastroView> {
                             fontSize: 12,
                           ),
                         ),
-                        
-                        const SizedBox(height: 15), // Espaçamento reduzido antes dos inputs
-                        
+
+                        const SizedBox(
+                            height:
+                                15), // Espaçamento reduzido antes dos inputs
+
                         _buildExternalIconInput(
                           "Usuário",
                           "Nome de usuário",
@@ -230,11 +255,14 @@ class _CadastroViewState extends State<CadastroView> {
                           obscureText: ocultarSenha,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              ocultarSenha ? LucideIcons.eye : LucideIcons.eyeOff,
+                              ocultarSenha
+                                  ? LucideIcons.eye
+                                  : LucideIcons.eyeOff,
                               color: const Color(0xFF666666),
                               size: 18,
                             ),
-                            onPressed: () => setState(() => ocultarSenha = !ocultarSenha),
+                            onPressed: () =>
+                                setState(() => ocultarSenha = !ocultarSenha),
                           ),
                         ),
                         _buildExternalIconInput(
@@ -245,16 +273,19 @@ class _CadastroViewState extends State<CadastroView> {
                           obscureText: ocultarConfirmarSenha,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              ocultarConfirmarSenha ? LucideIcons.eye : LucideIcons.eyeOff,
+                              ocultarConfirmarSenha
+                                  ? LucideIcons.eye
+                                  : LucideIcons.eyeOff,
                               color: const Color(0xFF666666),
                               size: 18,
                             ),
-                            onPressed: () => setState(() => ocultarConfirmarSenha = !ocultarConfirmarSenha),
+                            onPressed: () => setState(() =>
+                                ocultarConfirmarSenha = !ocultarConfirmarSenha),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 10),
-                        
+
                         // Botão Cadastrar compacto e estilizado
                         SizedBox(
                           height: 46,
@@ -296,9 +327,9 @@ class _CadastroViewState extends State<CadastroView> {
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 5),
-                        
+
                         // Link de voltar para o Login limpo e com paddings zerados
                         TextButton(
                           style: TextButton.styleFrom(
@@ -354,12 +385,15 @@ class _CadastroViewState extends State<CadastroView> {
     required TextEditingController controller,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10), // Reduzido de 14 para 10 para achatar verticalmente
+      padding: const EdgeInsets.only(
+          bottom: 10), // Reduzido de 14 para 10 para achatar verticalmente
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 36, bottom: 4), // Alinhado ao início do TextField remodelado
+            padding: const EdgeInsets.only(
+                left: 36,
+                bottom: 4), // Alinhado ao início do TextField remodelado
             child: Text(
               label,
               style: const TextStyle(
@@ -391,7 +425,8 @@ class _CadastroViewState extends State<CadastroView> {
                 ),
                 filled: true,
                 fillColor: Colors.white10, // Cor de fundo igual ao login
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 suffixIcon: suffixIcon,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),

@@ -3,10 +3,7 @@ import 'auth_service.dart';
 
 class DioClient {
   static final Dio dio = Dio(BaseOptions(
-    baseUrl: "https://busaorole.fwt.app.br",
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    baseUrl: "https://busaorole.fwt.app.br"
   ));
 
   static Future<void> init() async {
