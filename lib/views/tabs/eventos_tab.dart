@@ -11,7 +11,6 @@ class EventosTab extends StatefulWidget {
 
   @override
   State<EventosTab> createState() => _EventosTabState();
-
 }
 
 class _EventosTabState extends State<EventosTab> {
@@ -23,7 +22,6 @@ class _EventosTabState extends State<EventosTab> {
   List<dynamic> clientes = [];
 
   bool carregandoClientes = false;
-  bool _isExportingCheers = false;
   bool isLoading = true;
   bool isSaving = false;
 
@@ -152,9 +150,8 @@ class _EventosTabState extends State<EventosTab> {
     if (categoriaSelecionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Selecione uma categoria!"),
-          backgroundColor: Colors.red,
-        ),
+            content: Text("Selecione uma categoria!"),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -173,15 +170,12 @@ class _EventosTabState extends State<EventosTab> {
     try {
       Response response;
       if (eventoSelecionado == null) {
-        response = await DioClient.dio.post(
-          "/eventos/cadastrar",
-          data: mapDados,
-        );
+        response =
+            await DioClient.dio.post("/eventos/cadastrar", data: mapDados);
       } else {
         response = await DioClient.dio.put(
-          "/eventos/atualizar/${eventoSelecionado!['id']}",
-          data: mapDados,
-        );
+            "/eventos/atualizar/${eventoSelecionado!['id']}",
+            data: mapDados);
       }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -189,9 +183,8 @@ class _EventosTabState extends State<EventosTab> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Evento salvo com sucesso!'),
-              backgroundColor: Colors.green,
-            ),
+                content: Text('Evento salvo com sucesso!'),
+                backgroundColor: Colors.green),
           );
         }
       } else {
@@ -222,18 +215,15 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _deletarEvento(dynamic id) async {
     try {
-      final response = await DioClient.dio.delete(
-        "/eventos/deletar/$id",
-      );
+      final response = await DioClient.dio.delete("/eventos/deletar/$id");
 
       if (response.statusCode == 200) {
         await _fetchEventos();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Evento deletado!'),
-              backgroundColor: Colors.green,
-            ),
+                content: Text('Evento deletado!'),
+                backgroundColor: Colors.green),
           );
         }
         return;
@@ -280,17 +270,14 @@ class _EventosTabState extends State<EventosTab> {
                           CircularProgressIndicator(
                               color: Theme.of(context).primaryColor),
                           const SizedBox(height: 16),
-                          const Text(
-                            "Excluindo passageiros...",
-                            style: TextStyle(fontSize: 13),
-                            textAlign: TextAlign.center,
-                          ),
+                          const Text("Excluindo passageiros...",
+                              style: TextStyle(fontSize: 13),
+                              textAlign: TextAlign.center),
                         ],
                       ),
                     )
                   : const Text(
-                      "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita.",
-                    ),
+                      "Tem certeza que deseja excluir todos os passageiros deste evento? Esta ação não pode ser desfeita."),
               actions: excluindo
                   ? []
                   : [
@@ -303,12 +290,9 @@ class _EventosTabState extends State<EventosTab> {
                             backgroundColor: Colors.red),
                         onPressed: () async {
                           setModalState(() => excluindo = true);
-
                           try {
                             final response = await DioClient.dio.delete(
-                              "/pedidos/evento/${eventoSelecionado!['id']}",
-                            );
-
+                                "/pedidos/evento/${eventoSelecionado!['id']}");
                             if (response.statusCode == 200) {
                               if (mounted) {
                                 setState(() {
@@ -318,48 +302,27 @@ class _EventosTabState extends State<EventosTab> {
                                   totalClientes = 0;
                                 });
                               }
-
                               await Future.delayed(
-                                  const Duration(milliseconds: 1000));
-
-                              if (mounted) {
-                                Navigator.pop(dialogContext);
-                              }
-
+                                  const Duration(milliseconds: 500));
+                              if (mounted) Navigator.pop(dialogContext);
                               if (mounted) {
                                 _fetchClientesDoEvento(
                                     eventoSelecionado!['id']);
-
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                        "Passageiros removidos com sucesso!"),
-                                    backgroundColor: Colors.green,
-                                  ),
+                                      content: Text(
+                                          "Passageiros removidos com sucesso!"),
+                                      backgroundColor: Colors.green),
                                 );
                               }
-                            } else {
-                              String mensagem = "Erro ao excluir passageiros.";
-                              try {
-                                final dados = response.data is String
-                                    ? jsonDecode(response.data)
-                                    : response.data;
-                                if (dados is Map && dados['detail'] != null) {
-                                  mensagem = dados['detail'].toString();
-                                }
-                              } catch (_) {}
-                              throw Exception(mensagem);
                             }
                           } catch (e) {
                             if (mounted) {
                               Navigator.pop(dialogContext);
-                              String texto =
-                                  e.toString().replaceFirst("Exception: ", "");
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(texto),
-                                  backgroundColor: Colors.red,
-                                ),
+                                    content: Text(e.toString()),
+                                    backgroundColor: Colors.red),
                               );
                             }
                           }
@@ -376,7 +339,6 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> importarPlanilha() async {
     FilePickerResult? result;
-
     try {
       result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -409,24 +371,19 @@ class _EventosTabState extends State<EventosTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
                       color: Theme.of(dialogContext).primaryColor),
                   const SizedBox(height: 24),
-                  Text(
-                    "Importando planilha...",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: textColor, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Importando planilha...",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: textColor, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text(
-                    "Processando dados no servidor...",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: textColor.withOpacity(0.6), fontSize: 12),
-                  ),
+                  Text("Processando dados no servidor...",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: textColor.withOpacity(0.6), fontSize: 12)),
                 ],
               ),
             ),
@@ -463,37 +420,28 @@ class _EventosTabState extends State<EventosTab> {
       }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        await Future.delayed(const Duration(seconds: 3));
-
+        await Future.delayed(const Duration(seconds: 1));
         setState(() {
           paginaAtual = 1;
           search = "";
           clientes = [];
         });
-
         await _fetchClientesDoEvento(eventoSelecionado!['id']);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Planilha importada com sucesso!"),
-            backgroundColor: Colors.green,
-          ),
+              content: Text("Planilha importada com sucesso!"),
+              backgroundColor: Colors.green),
         );
-      } else {
-        throw Exception("Status do servidor: ${response.statusCode}");
       }
-    } catch (e, stackTrace) {
-      if (modalAberto && mounted) {
-        Navigator.pop(context);
-      }
-      debugPrint("ERRO CRÍTICO NA IMPORTAÇÃO: $e\n$stackTrace");
+    } catch (e) {
+      if (modalAberto && mounted) Navigator.pop(context);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Erro ao importar planilha: $e"),
-          backgroundColor: Colors.red,
-        ),
+            content: Text("Erro ao importar planilha: $e"),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -523,14 +471,10 @@ class _EventosTabState extends State<EventosTab> {
 
   Future<void> _fetchClientesDoEvento(int eventoId, {int? pagina}) async {
     final paginaParaBuscar = pagina ?? paginaAtual;
-
-    setState(() {
-      carregandoClientes = true;
-    });
+    setState(() => carregandoClientes = true);
 
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-
       final response = await DioClient.dio.get(
         "/clientes/evento/$eventoId",
         queryParameters: {
@@ -548,36 +492,28 @@ class _EventosTabState extends State<EventosTab> {
           setState(() {
             clientes = dados['clientes'] ?? [];
             totalClientes = dados['total'] ?? 0;
-            paginaAtual =
-                paginaParaBuscar; // Só atualiza o contador de páginas em caso de sucesso
+            paginaAtual = paginaParaBuscar;
           });
         }
       }
     } catch (e) {
       debugPrint(e.toString());
-    } finally {
       if (mounted) {
-        setState(() => carregandoClientes = false);
+        setState(() {
+          clientes = [];
+          totalClientes = 0;
+          paginaAtual = 1;
+        });
       }
+    } finally {
+      if (mounted) setState(() => carregandoClientes = false);
     }
   }
 
   Future<void> _exportarCheers() async {
     if (eventoSelecionado == null) return;
-
     final int idEvento = eventoSelecionado?['id'] ?? 0;
     final nomeEvento = eventoSelecionado?['nome']?.toString().trim() ?? '';
-
-    if (nomeEvento.isEmpty || idEvento == 0) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Dados do evento inválidos para exportação.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
 
     bool exportando = true;
     bool importando = false;
@@ -600,13 +536,9 @@ class _EventosTabState extends State<EventosTab> {
                 try {
                   final response = await DioClient.dio.post(
                     '/pedidos/exportar-planilha',
-                    data: jsonEncode({
-                      'evento_id': idEvento,
-                      'evento': nomeEvento,
-                    }),
-                    options: Options(
-                      contentType: 'application/json',
-                    ),
+                    data: jsonEncode(
+                        {'evento_id': idEvento, 'evento': nomeEvento}),
+                    options: Options(contentType: 'application/json'),
                   );
 
                   if (response.statusCode == 200 ||
@@ -614,43 +546,23 @@ class _EventosTabState extends State<EventosTab> {
                     final data = response.data is String
                         ? json.decode(response.data)
                         : response.data;
-                    setModalState(() {
-                      exportando = false;
-                      arquivoGerado =
-                          data['nome_arquivo'] ?? 'cheers_export.xls';
-                    });
+                    if (Navigator.canPop(dialogContext)) {
+                      setModalState(() {
+                        exportando = false;
+                        arquivoGerado =
+                            data['nome_arquivo'] ?? 'cheers_export.xls';
+                      });
+                    }
                   } else {
-                    String mensagem = "Erro desconhecido no servidor";
-                    final data = response.data;
-                    if (data is Map && data['detail'] != null) {
-                      mensagem = data['detail'].toString();
-                    } else {
-                      mensagem = data.toString();
-                    }
-
-                    if (mensagem.contains("não encontrado na listagem")) {
-                      mensagem =
-                          "Este evento não foi encontrado na Cheers. Verifique se o nome está digitado corretamente.";
-                    }
-
                     setModalState(() {
                       exportando = false;
-                      erroMensagem = mensagem;
+                      erroMensagem = "Erro no processamento do servidor.";
                     });
                   }
                 } catch (e) {
-                  String mensagem = e.toString();
-                  if (e is DioException && e.response != null) {
-                    final data = e.response?.data;
-                    if (data is Map && data['detail'] != null) {
-                      mensagem = data['detail'].toString();
-                    } else if (data != null) {
-                      mensagem = data.toString();
-                    }
-                  }
                   setModalState(() {
                     exportando = false;
-                    erroMensagem = mensagem;
+                    erroMensagem = e.toString();
                   });
                 }
               }();
@@ -665,219 +577,102 @@ class _EventosTabState extends State<EventosTab> {
                     ? "Exportando Cheers"
                     : importando
                         ? "Importando Planilha"
-                        : importacaoConcluida
-                            ? "Importação Concluída"
-                            : (erroMensagem != null
-                                ? "Falha no Processo"
-                                : "Exportação Concluída"),
+                        : "Processo Concluído",
                 style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
-              content: SizedBox(
-                width: 320,
-                height: (exportando || importando) ? 180 : null,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (exportando) ...[
-                      CircularProgressIndicator(
-                          color: Theme.of(dialogContext).primaryColor),
-                      const SizedBox(height: 24),
-                      Text(
-                        "Gerando planilha, por favor aguarde...",
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (exportando) ...[
+                    CircularProgressIndicator(
+                        color: Theme.of(dialogContext).primaryColor),
+                    const SizedBox(height: 16),
+                    Text("Gerando planilha...",
+                        style: TextStyle(color: textColor)),
+                  ] else if (importando) ...[
+                    const CircularProgressIndicator(color: Colors.green),
+                    const SizedBox(height: 16),
+                    Text("Sincronizando com o banco...",
+                        style: TextStyle(color: textColor)),
+                  ] else ...[
+                    Icon(
+                        erroMensagem != null
+                            ? LucideIcons.alertTriangle
+                            : LucideIcons.checkCircle2,
+                        color: erroMensagem != null ? Colors.red : Colors.green,
+                        size: 48),
+                    const SizedBox(height: 12),
+                    Text(
+                        erroMensagem ??
+                            resumoImportacao ??
+                            "Arquivo exportado com sucesso!",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: textColor),
-                      ),
-                    ] else if (importando) ...[
-                      const CircularProgressIndicator(color: Colors.green),
-                      const SizedBox(height: 24),
-                      Text(
-                        "Baixando e processando planilha no banco de dados...",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: textColor),
-                      ),
-                    ] else if (erroMensagem != null) ...[
-                      const Icon(LucideIcons.alertTriangle,
-                          color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
-                      Text("Erro: $erroMensagem",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red)),
-                    ] else if (importacaoConcluida) ...[
-                      const Icon(LucideIcons.checkCircle2,
-                          color: Colors.green, size: 54),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Sucesso!",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                            fontSize: 18),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        resumoImportacao ??
-                            "Os participantes deste evento foram sincronizados.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: textColor.withOpacity(0.7), fontSize: 13),
-                      ),
-                    ] else ...[
-                      const Icon(LucideIcons.checkCircle2,
-                          color: Colors.green, size: 48),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Arquivo gerado com sucesso!",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: textColor),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white10 : Colors.black12,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(LucideIcons.fileSpreadsheet,
-                                color: Colors.green, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                arquivoGerado ?? '',
-                                style:
-                                    TextStyle(color: textColor, fontSize: 13),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                        style: TextStyle(color: textColor)),
+                  ]
+                ],
               ),
-              actionsPadding:
-                  const EdgeInsets.only(bottom: 20, left: 20, right: 20),
               actions: [
-                if (!exportando && !importando) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          child: Text("Fechar",
-                              style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : Colors.black54)),
-                        ),
-                      ),
-                      if (erroMensagem == null && !importacaoConcluida) ...[
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green),
-                            onPressed: () async {
-                              setModalState(() {
-                                importando = true;
-                              });
+                TextButton(
+                  onPressed: () {
+                    if (Navigator.canPop(dialogContext)) {
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  child: const Text("Fechar"),
+                ),
+                if (!exportando &&
+                    !importando &&
+                    erroMensagem == null &&
+                    !importacaoConcluida)
+                  ElevatedButton(
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    onPressed: () async {
+                      setModalState(() {
+                        importando = true;
+                      });
+                      try {
+                        final downloadResponse = await DioClient.dio.post(
+                          '/pedidos/baixar-arquivo-exportado',
+                          data: jsonEncode({'nome_arquivo': arquivoGerado}),
+                          options: Options(responseType: ResponseType.bytes),
+                        );
 
-                              try {
-                                final downloadResponse =
-                                    await DioClient.dio.post(
-                                  '/pedidos/baixar-arquivo-exportado',
-                                  data: jsonEncode(
-                                      {'nome_arquivo': arquivoGerado}),
-                                  options: Options(
-                                    contentType: 'application/json',
-                                    responseType: ResponseType.bytes,
-                                  ),
-                                );
+                        if (downloadResponse.statusCode == 200) {
+                          final List<int> bytes = downloadResponse.data;
+                          FormData formData = FormData.fromMap({
+                            "file": MultipartFile.fromBytes(bytes,
+                                filename: arquivoGerado),
+                            "evento_id": idEvento,
+                          });
 
-                                if (downloadResponse.statusCode == 200 ||
-                                    downloadResponse.statusCode == 201) {
-                                  final List<int> bytes = downloadResponse.data;
-
-                                  FormData formData = FormData.fromMap({
-                                    "file": MultipartFile.fromBytes(bytes,
-                                        filename: arquivoGerado),
-                                    "evento_id": idEvento,
-                                  });
-
-                                  final importResponse =
-                                      await DioClient.dio.post(
-                                    "/pedidos/importar-planilha",
-                                    data: formData,
-                                  );
-
-                                  if (importResponse.statusCode == 201 ||
-                                      importResponse.statusCode == 200) {
-                                    setState(() => paginaAtual = 1);
-                                    await _fetchClientesDoEvento(idEvento);
-
-                                    String? resumo;
-                                    if (importResponse.data != null &&
-                                        importResponse.data is Map) {
-                                      final totalNovos = importResponse
-                                              .data['total_clientes_novos'] ??
-                                          0;
-                                      final totalPedidos = importResponse
-                                              .data['total_pedidos_criados'] ??
-                                          0;
-                                      resumo =
-                                          "$totalNovos novos clientes e $totalPedidos pedidos integrados.";
-                                    }
-
-                                    setModalState(() {
-                                      importando = false;
-                                      importacaoConcluida = true;
-                                      resumoImportacao = resumo;
-                                    });
-                                  } else {
-                                    setModalState(() {
-                                      importando = false;
-                                      erroMensagem =
-                                          "Erro ao processar planilha no servidor.";
-                                    });
-                                  }
-                                } else {
-                                  setModalState(() {
-                                    importando = false;
-                                    erroMensagem =
-                                        "Falha ao baixar o arquivo exportado.";
-                                  });
-                                }
-                              } catch (e) {
-                                String msg = e.toString();
-                                if (e is DioException && e.response != null) {
-                                  final data = e.response?.data;
-                                  if (data is Map && data['detail'] != null) {
-                                    msg = data['detail'].toString();
-                                  } else if (data != null) {
-                                    msg = data.toString();
-                                  }
-                                }
-                                setModalState(() {
-                                  importando = false;
-                                  erroMensagem = msg;
-                                });
-                              }
-                            },
-                            icon: const Icon(LucideIcons.fileInput,
-                                color: Colors.white, size: 16),
-                            label: const Text("Importar",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ),
-                      ],
-                    ],
+                          final importResponse = await DioClient.dio.post(
+                              "/pedidos/importar-planilha",
+                              data: formData);
+                          if (importResponse.statusCode == 201 ||
+                              importResponse.statusCode == 200) {
+                            if (mounted) {
+                              setState(() => paginaAtual = 1);
+                              await _fetchClientesDoEvento(idEvento);
+                            }
+                            setModalState(() {
+                              importando = false;
+                              importacaoConcluida = true;
+                              resumoImportacao =
+                                  "Clientes sincronizados com sucesso!";
+                            });
+                          }
+                        }
+                      } catch (e) {
+                        setModalState(() {
+                          importando = false;
+                          erroMensagem = e.toString();
+                        });
+                      }
+                    },
+                    child: const Text("Importar para o App"),
                   )
-                ]
               ],
             );
           },
@@ -929,21 +724,15 @@ class _EventosTabState extends State<EventosTab> {
 
   @override
   Widget build(BuildContext context) {
-    Widget telaAtual;
-
-    if (isEditingOrCreating) {
-      telaAtual = _buildFormularioDaUI(context);
-    } else if (eventoSelecionado != null) {
-      telaAtual = _buildTelaDoEventoDetalhado(context);
-    } else {
-      telaAtual = _buildTelaDeEventos(context);
-    }
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      child: telaAtual,
+    return KeyedSubtree(
+      key: ValueKey(isEditingOrCreating
+          ? 'form'
+          : (eventoSelecionado != null ? 'details' : 'list')),
+      child: isEditingOrCreating
+          ? _buildFormularioDaUI(context)
+          : (eventoSelecionado != null
+              ? _buildTelaDoEventoDetalhado(context)
+              : _buildTelaDeEventos(context)),
     );
   }
 
@@ -954,7 +743,6 @@ class _EventosTabState extends State<EventosTab> {
     final subtitleColor = isDark ? const Color(0xFFA0A0A0) : Colors.grey[700]!;
 
     return Padding(
-      key: const ValueKey('TelaEventos'),
       padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -986,15 +774,15 @@ class _EventosTabState extends State<EventosTab> {
                       borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.all(16),
                 ),
-                child: isMobile
-                    ? Icon(LucideIcons.plus, size: 18, color: textColor)
-                    : Row(
-                        children: [
-                          Icon(LucideIcons.plus, size: 18, color: textColor),
-                          const SizedBox(width: 8),
-                          Text("Adicionar", style: TextStyle(color: textColor)),
-                        ],
-                      ),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.plus, size: 18, color: textColor),
+                    if (!isMobile) ...[
+                      const SizedBox(width: 8),
+                      Text("Adicionar", style: TextStyle(color: textColor))
+                    ],
+                  ],
+                ),
               )
             ],
           ),
@@ -1009,8 +797,7 @@ class _EventosTabState extends State<EventosTab> {
                         child: Text(
                             "Nenhum evento encontrado.\nCrie seu primeiro rolê!",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: subtitleColor)),
-                      )
+                            style: TextStyle(color: subtitleColor)))
                     : GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -1045,25 +832,14 @@ class _EventosTabState extends State<EventosTab> {
       } catch (_) {}
     }
 
-    DateTime? dataEvento;
-    try {
-      dataEvento = DateTime.parse(evento['data_evento']);
-    } catch (_) {}
-
-    final bool eventoPassado =
-        dataEvento != null && dataEvento.isBefore(DateTime.now());
-
-    final Color corData = eventoPassado ? Colors.red : Colors.green;
-
     return InkWell(
       onTap: () => _abrirDetalhesEvento(Map<String, dynamic>.from(evento)),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor),
-        ),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1081,44 +857,20 @@ class _EventosTabState extends State<EventosTab> {
                           ? Image.network(
                               evento['imagem'],
                               fit: BoxFit.cover,
-                              cacheWidth: 800,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                color: const Color(0xFF050505),
-                                alignment: Alignment.center,
-                                child: const Icon(LucideIcons.image,
-                                    color: Colors.grey, size: 40),
-                              ),
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: isDark
-                                      ? Colors.black26
-                                      : Colors.grey[200],
-                                  alignment: Alignment.center,
-                                  child: const SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                );
-                              },
+                                      color: const Color(0xFF050505),
+                                      child: const Icon(LucideIcons.image,
+                                          color: Colors.grey, size: 40)),
                             )
                           : Container(
                               color: const Color(0xFF050505),
                               alignment: Alignment.center,
-                              child: const Text(
-                                "MEU EVENTO",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 3,
-                                  color: Color(0xFFC41313),
-                                ),
-                              ),
-                            ),
+                              child: const Text("MEU EVENTO",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFC41313)))),
                     ),
                     Positioned(
                       top: 12,
@@ -1127,24 +879,14 @@ class _EventosTabState extends State<EventosTab> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(131, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(6),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                            color: const Color.fromARGB(131, 0, 0, 0),
+                            borderRadius: BorderRadius.circular(6)),
                         child: Text(
-                          _descobrirNomeDaCategoria(evento['categoria_id']),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                            _descobrirNomeDaCategoria(evento['categoria_id']),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -1159,26 +901,21 @@ class _EventosTabState extends State<EventosTab> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          evento['nome'] ?? 'Sem Nome',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: textColor,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                          child: Text(evento['nome'] ?? 'Sem Nome',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold))),
                       IconButton(
-                        icon: const Icon(LucideIcons.pencil, size: 14),
-                        onPressed: () => _abrirFormulario(
-                            evento: Map<String, dynamic>.from(evento)),
-                      ),
+                          icon: const Icon(LucideIcons.pencil, size: 14),
+                          onPressed: () => _abrirFormulario(
+                              evento: Map<String, dynamic>.from(evento))),
                       IconButton(
-                        icon: const Icon(LucideIcons.trash2,
-                            size: 14, color: Colors.red),
-                        onPressed: () => _deletarEvento(evento['id']),
-                      ),
+                          icon: const Icon(LucideIcons.trash2,
+                              size: 14, color: Colors.red),
+                          onPressed: () => _deletarEvento(evento['id'])),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -1198,13 +935,10 @@ class _EventosTabState extends State<EventosTab> {
                       const Icon(LucideIcons.calendar,
                           size: 14, color: Color(0xFFB30000)),
                       const SizedBox(width: 6),
-                      Text(
-                        dataDisplay,
-                        style: TextStyle(
-                          color: corData,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(dataDisplay,
+                          style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1212,14 +946,11 @@ class _EventosTabState extends State<EventosTab> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "R\$ ${evento['valor_passagem'] ?? '0.0'}",
-                      style: const TextStyle(
-                          color: Colors.green, fontWeight: FontWeight.bold),
-                    ),
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Text("R\$ ${evento['valor_passagem'] ?? '0.0'}",
+                        style: const TextStyle(
+                            color: Colors.green, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -1238,10 +969,7 @@ class _EventosTabState extends State<EventosTab> {
     final borderColor =
         isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1);
 
-    final bool isEditing = eventoSelecionado != null;
-
     return Padding(
-      key: const ValueKey('TelaFormulario'),
       padding: EdgeInsets.all(isMobile ? 20 : 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1252,13 +980,11 @@ class _EventosTabState extends State<EventosTab> {
                   icon: Icon(LucideIcons.arrowLeft, color: textColor),
                   onPressed: _voltarParaEventos),
               const SizedBox(width: 10),
-              Text(
-                isEditing ? "Editar Evento" : "Novo Evento",
-                style: TextStyle(
-                    fontSize: isMobile ? 24 : 32,
-                    fontWeight: FontWeight.w800,
-                    color: textColor),
-              ),
+              Text(eventoSelecionado != null ? "Editar Evento" : "Novo Evento",
+                  style: TextStyle(
+                      fontSize: isMobile ? 24 : 32,
+                      fontWeight: FontWeight.w800,
+                      color: textColor)),
             ],
           ),
           const SizedBox(height: 30),
@@ -1268,10 +994,9 @@ class _EventosTabState extends State<EventosTab> {
                 constraints: const BoxConstraints(maxWidth: 600),
                 padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor),
-                ),
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: borderColor)),
                 child: Form(
                   key: _formKey,
                   child: ListView(
@@ -1281,9 +1006,9 @@ class _EventosTabState extends State<EventosTab> {
                         controller: _nomeController,
                         style: TextStyle(color: textColor),
                         decoration: _buildInputDecoration(
-                            "Nome do Evento (Ex: BGS 2026)", LucideIcons.type),
+                            "Nome do Evento", LucideIcons.type),
                         validator: (value) => value == null || value.isEmpty
-                            ? 'Informe o nome do evento'
+                            ? 'Informe o nome'
                             : null,
                       ),
                       const SizedBox(height: 20),
@@ -1293,15 +1018,15 @@ class _EventosTabState extends State<EventosTab> {
                         style: TextStyle(color: textColor),
                         decoration:
                             _buildInputDecoration("Categoria", LucideIcons.tag),
-                        items: categorias.map<DropdownMenuItem<int>>((c) {
-                          return DropdownMenuItem(
-                              value: c['id'] as int,
-                              child: Text(c['nome'] ?? ''));
-                        }).toList(),
+                        items: categorias
+                            .map<DropdownMenuItem<int>>((c) => DropdownMenuItem(
+                                value: c['id'] as int,
+                                child: Text(c['nome'] ?? '')))
+                            .toList(),
                         onChanged: (value) =>
                             setState(() => categoriaSelecionada = value),
                         validator: (value) =>
-                            value == null ? 'Selecione uma categoria' : null,
+                            value == null ? 'Selecione a categoria' : null,
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
@@ -1310,21 +1035,15 @@ class _EventosTabState extends State<EventosTab> {
                         style: TextStyle(color: textColor),
                         decoration: _buildInputDecoration(
                             "Data do Evento", LucideIcons.calendar),
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Informe a data'
-                            : null,
                         onTap: () async {
-                          final dataSelecionada = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100),
-                            locale: const Locale('pt', 'BR'),
-                          );
-
-                          if (dataSelecionada != null) {
-                            _dataController.text =
-                                "${dataSelecionada.day.toString().padLeft(2, '0')}/${dataSelecionada.month.toString().padLeft(2, '0')}/${dataSelecionada.year}";
+                          final date = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100));
+                          if (date != null) {
+                            setState(() => _dataController.text =
+                                "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}");
                           }
                         },
                       ),
@@ -1334,22 +1053,13 @@ class _EventosTabState extends State<EventosTab> {
                         style: TextStyle(color: textColor),
                         decoration: _buildInputDecoration(
                             "Local do Evento", LucideIcons.mapPin),
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Informe o local'
-                            : null,
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _valorController,
                         style: TextStyle(color: textColor),
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
                         decoration: _buildInputDecoration(
-                            "Valor da Passagem (Ex: 150.00)",
-                            LucideIcons.dollarSign),
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Informe o valor'
-                            : null,
+                            "Valor da Passagem", LucideIcons.dollarSign),
                       ),
                       const SizedBox(height: 40),
                       SizedBox(
@@ -1357,26 +1067,24 @@ class _EventosTabState extends State<EventosTab> {
                         child: ElevatedButton(
                           onPressed: isSaving ? null : _salvarEvento,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFB30000),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
+                              backgroundColor: const Color(0xFFB30000),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12))),
                           child: isSaving
                               ? const CircularProgressIndicator(
                                   color: Colors.white)
                               : const Text("SALVAR EVENTO",
                                   style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white)),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),
               ),
             ),
-          ),
+          )
         ],
       ),
     );
@@ -1394,345 +1102,305 @@ class _EventosTabState extends State<EventosTab> {
           : Colors.black.withOpacity(0.02),
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFB30000), width: 2),
-      ),
     );
   }
 
   Widget _buildTelaDoEventoDetalhado(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    final bool isMobile = MediaQuery.of(context).size.width < 700;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
-        isDark ? const Color.fromARGB(255, 255, 255, 255) : Colors.black;
+    final textColor = isDark ? Colors.white : Colors.black;
 
-    return Padding(
-      key: const ValueKey('TelaDetalhesEvento'),
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40,
-        vertical: isMobile ? 12 : 16, // Reduzido espaçamento vertical geral
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                  icon: Icon(LucideIcons.arrowLeft, color: textColor),
-                  onPressed: _voltarParaEventos),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  eventoSelecionado?['nome'] ?? '',
-                  style: TextStyle(
-                      fontSize:
-                          isMobile ? 18 : 22, // Título reduzido e compacto
-                      fontWeight: FontWeight.bold,
-                      color: textColor),
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(
+            maxWidth: 1100), // Largura máxima expandida ideal para iPads/Web
+        padding:
+            EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                    icon: Icon(LucideIcons.arrowLeft, color: textColor),
+                    onPressed: _voltarParaEventos),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    eventoSelecionado?['nome'] ?? '',
+                    style: TextStyle(
+                        fontSize: isMobile ? 20 : 26,
+                        fontWeight: FontWeight.bold,
+                        color: textColor),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 32, // Reduzida a altura vertical dos botões
-                      child: ElevatedButton.icon(
-                        onPressed: importarPlanilha,
-                        icon: const Icon(LucideIcons.fileSpreadsheet, size: 14),
-                        label: Text(
-                          isMobile ? "Importar" : "Importar Planilha",
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: ElevatedButton.icon(
+                      onPressed: importarPlanilha,
+                      icon: const Icon(LucideIcons.fileSpreadsheet, size: 16),
+                      label: Text(isMobile ? "Importar" : "Importar Planilha",
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12), // Fonte reduzida
-                        ),
-                        style: ElevatedButton.styleFrom(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
-                          elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
+                              borderRadius: BorderRadius.circular(10))),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 32, // Reduzida a altura vertical dos botões
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            eventoSelecionado == null ? null : _exportarCheers,
-                        icon: const Icon(LucideIcons.refreshCw, size: 14),
-                        label: Text(
-                          isMobile ? "Atualizar" : "Atualizar Cheers",
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: ElevatedButton.icon(
+                      onPressed: _exportarCheers,
+                      icon: const Icon(LucideIcons.refreshCw, size: 16),
+                      label: Text(isMobile ? "Atualizar" : "Atualizar Cheers",
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12), // Fonte reduzida
-                        ),
-                        style: ElevatedButton.styleFrom(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
-                          elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
+                              borderRadius: BorderRadius.circular(10))),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: TextField(
+                style: TextStyle(color: textColor, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: "Buscar cliente por nome...",
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                onChanged: (value) {
+                  _debounce?.cancel();
+                  _debounce =
+                      Timer(const Duration(milliseconds: 350), () async {
+                    if (mounted) {
+                      setState(() => search = value);
+                      await _fetchClientesDoEvento(eventoSelecionado!['id'],
+                          pagina: 1);
+                    }
+                  });
+                },
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 34, // Reduzida a altura do campo de busca
-            child: TextField(
-              style: TextStyle(color: textColor, fontSize: 13),
-              decoration: InputDecoration(
-                labelText: "Buscar cliente",
-                labelStyle: const TextStyle(fontSize: 12),
-                prefixIcon: const Icon(Icons.search, size: 18),
-                contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0, horizontal: 10), // Padding menor
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onChanged: (value) {
-                _debounce?.cancel();
-                _debounce = Timer(const Duration(milliseconds: 350), () async {
-                  if (mounted) {
-                    setState(() {
-                      search = value;
-                    });
-                    await _fetchClientesDoEvento(eventoSelecionado!['id'],
-                        pagina: 1);
-                  }
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: (carregandoClientes && clientes.isEmpty)
-                ? const Center(child: CircularProgressIndicator())
-                : Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : Colors.black12),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          height:
-                              44, // Reduzida a altura do cabeçalho da tabela de clientes
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.02)
-                                : Colors.black.withOpacity(0.02),
-                            border: Border(
-                              bottom: BorderSide(
-                                color: isDark ? Colors.white10 : Colors.black12,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Text(
-                                "Clientes",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                "$totalClientes clientes",
-                                style: TextStyle(
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.black12),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.02)
+                            : Colors.black.withOpacity(0.02),
+                        border: Border(
+                            bottom: BorderSide(
+                                color:
+                                    isDark ? Colors.white10 : Colors.black12)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text("Clientes cadastrados",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const Spacer(),
+                          Text("$totalClientes no total",
+                              style: TextStyle(
                                   color:
                                       isDark ? Colors.white70 : Colors.black54,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Tooltip(
-                                message: "Excluir todos os passageiros",
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(8),
-                                  onTap: _excluirPassageirosDoEvento,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(6.0),
-                                    child: Icon(
-                                      LucideIcons.trash2,
-                                      size: 16,
-                                      color: Colors.red[400],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                                  fontSize: 13)),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: Icon(LucideIcons.trash2,
+                                size: 18, color: Colors.red[400]),
+                            onPressed: _excluirPassageirosDoEvento,
                           ),
-                        ),
-                        // Barra linear que sinaliza o carregamento da próxima página em segundo plano
-                        if (carregandoClientes && clientes.isNotEmpty)
-                          LinearProgressIndicator(
-                            color: Theme.of(context).primaryColor,
-                            backgroundColor: Colors.transparent,
-                            minHeight: 2,
-                          )
-                        else
-                          const SizedBox(height: 2),
-                        Expanded(
-                          child: clientes.isEmpty
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: (carregandoClientes && clientes.isEmpty)
+                          ? const Center(child: CircularProgressIndicator())
+                          : clientes.isEmpty
                               ? Center(
-                                  child: Text(
-                                    "Nenhum cliente nesse evento",
-                                    style: TextStyle(
-                                        color: isDark
-                                            ? Colors.white70
-                                            : Colors.black87),
-                                  ),
+                                  child: Text("Nenhum cliente encontrado",
+                                      style: TextStyle(
+                                          color: isDark
+                                              ? Colors.white70
+                                              : Colors.black87,
+                                          fontSize: 14)),
                                 )
-                              : SingleChildScrollView(
-                                  child: DataTable(
-                                    showCheckboxColumn: false,
-                                    headingRowHeight: 0,
-                                    dividerThickness: 0,
-                                    dataRowMinHeight:
-                                        50, // Linhas ligeiramente mais compactas
-                                    dataRowMaxHeight: 50,
-                                    columns: const [
-                                      DataColumn(
-                                        label: SizedBox.shrink(),
-                                      ),
-                                    ],
-                                    rows: clientes.map<DataRow>((cliente) {
-                                      return DataRow(
-                                        onSelectChanged: (selected) {
-                                          if (selected != null) {
-                                            _mostrarDetalhesCliente(cliente);
-                                          }
-                                        },
-                                        cells: [
-                                          DataCell(
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: Text(
-                                                cliente['nome'] ?? "",
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                    fontSize: 13),
+                              : LayoutBuilder(
+                                  builder: (context, tableConstraints) {
+                                    return Column(
+                                      children: List.generate(clientesPorPagina,
+                                          (index) {
+                                        if (index < clientes.length) {
+                                          final cliente = clientes[index];
+                                          return Expanded(
+                                            child: InkWell(
+                                              onTap: () =>
+                                                  _mostrarDetalhesCliente(
+                                                      cliente),
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 20),
+                                                decoration: BoxDecoration(
+                                                  border: Border(
+                                                      bottom: BorderSide(
+                                                          color: isDark
+                                                              ? Colors.white
+                                                                  .withOpacity(
+                                                                      0.04)
+                                                              : Colors.black
+                                                                  .withOpacity(
+                                                                      0.04),
+                                                          width: 0.5)),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        cliente['nome'] ?? "",
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                            color: textColor,
+                                                            fontSize: 15,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ),
+                                                    Icon(
+                                                        LucideIcons
+                                                            .chevronRight,
+                                                        size: 16,
+                                                        color: isDark
+                                                            ? Colors.white30
+                                                            : Colors.black26),
+                                                  ],
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                        ),
-                        Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(
-                                  color:
-                                      isDark ? Colors.white10 : Colors.black12,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildPaginacaoBotao(
-                                  icon: LucideIcons.chevronsLeft,
-                                  ativo: paginaAtual > 1 && !carregandoClientes,
-                                  onTap: () async {
-                                    await _fetchClientesDoEvento(
-                                        eventoSelecionado!['id'],
-                                        pagina: 1);
+                                          );
+                                        }
+
+                                        // Linhas fantasmas estruturais esticadas para preencher o espaço do iPad
+                                        return const Expanded(
+                                          child:
+                                              SizedBox(width: double.infinity),
+                                        );
+                                      }),
+                                    );
                                   },
                                 ),
-                                const SizedBox(width: 8),
-                                _buildPaginacaoBotao(
-                                  icon: LucideIcons.chevronLeft,
-                                  ativo: paginaAtual > 1 && !carregandoClientes,
-                                  onTap: () async {
-                                    await _fetchClientesDoEvento(
-                                        eventoSelecionado!['id'],
-                                        pagina: paginaAtual - 1);
-                                  },
-                                ),
-                                const SizedBox(width: 18),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    "$paginaAtual",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  child: Text(
-                                    "de $totalPaginas",
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                _buildPaginacaoBotao(
-                                  icon: LucideIcons.chevronRight,
-                                  ativo: paginaAtual < totalPaginas &&
-                                      !carregandoClientes,
-                                  onTap: () async {
-                                    await _fetchClientesDoEvento(
-                                        eventoSelecionado!['id'],
-                                        pagina: paginaAtual + 1);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                _buildPaginacaoBotao(
-                                  icon: LucideIcons.chevronsRight,
-                                  ativo: paginaAtual < totalPaginas &&
-                                      !carregandoClientes,
-                                  onTap: () async {
-                                    await _fetchClientesDoEvento(
-                                        eventoSelecionado!['id'],
-                                        pagina: totalPaginas);
-                                  },
-                                ),
-                              ],
-                            )),
-                      ],
                     ),
-                  ),
-          )
-        ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                          border: Border(
+                              top: BorderSide(
+                                  color: isDark
+                                      ? Colors.white10
+                                      : Colors.black12))),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildPaginacaoBotao(
+                            icon: LucideIcons.chevronsLeft,
+                            ativo: paginaAtual > 1 && !carregandoClientes,
+                            onTap: () => _fetchClientesDoEvento(
+                                eventoSelecionado!['id'],
+                                pagina: 1),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildPaginacaoBotao(
+                            icon: LucideIcons.chevronLeft,
+                            ativo: paginaAtual > 1 && !carregandoClientes,
+                            onTap: () => _fetchClientesDoEvento(
+                                eventoSelecionado!['id'],
+                                pagina: paginaAtual - 1),
+                          ),
+                          const SizedBox(width: 20),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text("$paginaAtual",
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13)),
+                          ),
+                          Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              child: Text("de $totalPaginas",
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600))),
+                          _buildPaginacaoBotao(
+                            icon: LucideIcons.chevronRight,
+                            ativo: paginaAtual < totalPaginas &&
+                                !carregandoClientes,
+                            onTap: () => _fetchClientesDoEvento(
+                                eventoSelecionado!['id'],
+                                pagina: paginaAtual + 1),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildPaginacaoBotao(
+                            icon: LucideIcons.chevronsRight,
+                            ativo: paginaAtual < totalPaginas &&
+                                !carregandoClientes,
+                            onTap: () => _fetchClientesDoEvento(
+                                eventoSelecionado!['id'],
+                                pagina: totalPaginas),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -1746,8 +1414,8 @@ class _EventosTabState extends State<EventosTab> {
       onTap: ativo ? onTap : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 34,
-        height: 34,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           color: isDark
               ? Colors.white.withOpacity(0.03)
@@ -1757,7 +1425,7 @@ class _EventosTabState extends State<EventosTab> {
         ),
         child: Icon(icon,
             color: ativo ? (isDark ? Colors.white : Colors.black) : Colors.grey,
-            size: 16),
+            size: 18),
       ),
     );
   }
@@ -1830,19 +1498,17 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
     return AlertDialog(
       backgroundColor: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
-      ),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: isDark ? Colors.white10 : Colors.black12)),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text("Dados do Cliente",
               style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
           IconButton(
-            icon: Icon(LucideIcons.x,
-                color: isDark ? Colors.white54 : Colors.black54, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
+              icon: Icon(LucideIcons.x,
+                  color: isDark ? Colors.white54 : Colors.black54, size: 20),
+              onPressed: () => Navigator.pop(context)),
         ],
       ),
       content: SizedBox(
@@ -1868,14 +1534,13 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () => setState(() => editando = true),
-                        icon:
-                            const Icon(LucideIcons.pencil, color: Colors.white),
+                        icon: const Icon(LucideIcons.pencil,
+                            color: Colors.white, size: 16),
                         label: const Text("Editar Dados",
                             style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                        ),
+                            backgroundColor: Theme.of(context).primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 15)),
                       ),
                     )
                   : Row(
@@ -1898,11 +1563,10 @@ class _ClienteDetalhesDialogState extends State<ClienteDetalhesDialog> {
                           child: ElevatedButton(
                             onPressed: () async {
                               await widget.onSalvar(
-                                nomeController.text,
-                                emailController.text,
-                                cpfController.text,
-                                telefoneController.text,
-                              );
+                                  nomeController.text,
+                                  emailController.text,
+                                  cpfController.text,
+                                  telefoneController.text);
                               if (mounted) Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
@@ -1928,13 +1592,12 @@ class CampoClienteCard extends StatelessWidget {
   final IconData icon;
   final bool editando;
 
-  const CampoClienteCard({
-    super.key,
-    required this.label,
-    required this.controller,
-    required this.icon,
-    required this.editando,
-  });
+  const CampoClienteCard(
+      {super.key,
+      required this.label,
+      required this.controller,
+      required this.icon,
+      required this.editando});
 
   @override
   Widget build(BuildContext context) {
@@ -1957,13 +1620,11 @@ class CampoClienteCard extends StatelessWidget {
                     style: TextStyle(color: subtitleColor, fontSize: 11)),
                 const SizedBox(height: 5),
                 if (!editando)
-                  Text(
-                    controller.text,
-                    style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500),
-                  )
+                  Text(controller.text,
+                      style: TextStyle(
+                          color: textColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500))
                 else
                   TextField(
                     controller: controller,
@@ -1976,15 +1637,13 @@ class CampoClienteCard extends StatelessWidget {
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                            color: isDark ? Colors.white10 : Colors.black12),
-                      ),
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                              color: isDark ? Colors.white10 : Colors.black12)),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            BorderSide(color: Theme.of(context).primaryColor),
-                      ),
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                              color: Theme.of(context).primaryColor)),
                     ),
                   ),
               ],

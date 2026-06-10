@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/* import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../theme_controller.dart';
 import '../../services/auth_service.dart';
@@ -50,9 +50,7 @@ class _ConfigTabState extends State<ConfigTab> {
               ThemeController.toggleTheme(v);
             },
           ),
-          
-          // 💡 REMOVIDO: O ConfigItemCard de Notificações foi retirado daqui.
-          
+                    
           const SizedBox(height: 20),
           LogoutCard(
             onLogoutPressed: () async {
@@ -243,4 +241,4 @@ class LogoutCard extends StatelessWidget {
       ),
     );
   }
-}
+} */

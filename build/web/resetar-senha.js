@@ -1,78 +1,71 @@
 const API_URL =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-        ? "http://127.0.0.1:8000"
-        : "https://busaorole.fwt.app.br";
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:8000"
+    : "https://busaorole.fwt.app.br";
 
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.querySelector("form");
-    const senhaInput = document.getElementById("senha");
-    const confirmarSenhaInput = document.getElementById("confirmar-senha");
-    const button = document.querySelector(".btn-submit");
+  const form = document.querySelector("form");
+  const senhaInput = document.getElementById("senha");
+  const confirmarSenhaInput = document.getElementById("confirmar-senha");
+  const button = document.querySelector(".btn-submit");
 
-    if (!form) return;
+  if (!form) return;
 
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        const senha = senhaInput.value.trim();
-        const confirmarSenha = confirmarSenhaInput.value.trim();
-        const token = new URLSearchParams(window.location.search).get("token");
+    const senha = senhaInput.value.trim();
+    const confirmarSenha = confirmarSenhaInput.value.trim();
+    const token = new URLSearchParams(window.location.search).get("token");
 
-        if (!token) {
-            mostrarMensagem("Token inválido ou expirado", "erro");
-            return;
-        }
+    if (!token) {
+      mostrarMensagem("Token inválido ou expirado", "erro");
+      return;
+    }
 
-        if (!senha || !confirmarSenha) {
-            mostrarMensagem("Preencha todos os campos", "erro");
-            return;
-        }
+    if (!senha || !confirmarSenha) {
+      mostrarMensagem("Preencha todos os campos", "erro");
+      return;
+    }
 
-        if (senha.length < 6) {
-            mostrarMensagem(
-                "A senha deve ter no mínimo 6 caracteres",
-                "erro"
-            );
-            return;
-        }
+    if (senha.length < 6) {
+      mostrarMensagem("A senha deve ter no mínimo 6 caracteres", "erro");
+      return;
+    }
 
-        if (senha !== confirmarSenha) {
-            mostrarMensagem("As senhas não coincidem", "erro");
-            return;
-        }
+    if (senha !== confirmarSenha) {
+      mostrarMensagem("As senhas não coincidem", "erro");
+      return;
+    }
 
-        const textoOriginal = button.textContent;
+    const textoOriginal = button.textContent;
 
-        button.disabled = true;
-        button.textContent = "Redefinindo...";
+    button.disabled = true;
+    button.textContent = "Redefinindo...";
 
-        try {
-            const response = await fetch(
-                `${API_URL}/usuarios/resetar-senha`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        token,
-                        nova_senha: senha
-                    })
-                }
-            );
+    try {
+      const response = await fetch(`${API_URL}/usuarios/resetar-senha`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          nova_senha: senha,
+        }),
+      });
 
-            let data = {};
+      let data = {};
 
-            try {
-                data = await response.json();
-            } catch (_) {}
+      try {
+        data = await response.json();
+      } catch (_) {}
 
-            if (response.ok) {
-                const container =
-                    document.querySelector(".auth-container");
+      if (response.ok) {
+        const container = document.querySelector(".auth-container");
 
-                container.innerHTML = `
+        container.innerHTML = `
                     <div style="text-align:center;padding:20px 0;">
                         <i data-lucide="check-circle"
                            style="color:#2ecc71;width:64px;height:64px;margin-bottom:24px;display:inline-block;">
@@ -98,53 +91,49 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
-                lucide.createIcons();
-            } else {
-                mostrarMensagem(
-                    data.detail ||
-                    data.mensagem ||
-                    "Erro ao redefinir senha",
-                    "erro"
-                );
+        lucide.createIcons();
 
-                button.disabled = false;
-                button.textContent = textoOriginal;
-            }
-        } catch (error) {
-            console.error(error);
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
+      } else {
+        mostrarMensagem(
+          data.detail || data.mensagem || "Erro ao redefinir senha",
+          "erro",
+        );
 
-            mostrarMensagem(
-                "Servidor offline ou erro de conexão",
-                "erro"
-            );
+        button.disabled = false;
+        button.textContent = textoOriginal;
+      }
+    } catch (error) {
+      console.error(error);
 
-            button.disabled = false;
-            button.textContent = textoOriginal;
-        }
-    });
+      mostrarMensagem("Servidor offline ou erro de conexão", "erro");
+
+      button.disabled = false;
+      button.textContent = textoOriginal;
+    }
+  });
 });
 
 function mostrarMensagem(texto, tipo) {
-    const mensagemExistente =
-        document.querySelector(".alert-message");
+  const mensagemExistente = document.querySelector(".alert-message");
 
-    if (mensagemExistente) {
-        mensagemExistente.remove();
+  if (mensagemExistente) {
+    mensagemExistente.remove();
+  }
+
+  const div = document.createElement("div");
+
+  div.classList.add("alert-message");
+  div.classList.add(tipo);
+  div.innerText = texto;
+
+  document.querySelector(".auth-container").appendChild(div);
+
+  setTimeout(() => {
+    if (document.body.contains(div)) {
+      div.remove();
     }
-
-    const div = document.createElement("div");
-
-    div.classList.add("alert-message");
-    div.classList.add(tipo);
-    div.innerText = texto;
-
-    document
-        .querySelector(".auth-container")
-        .appendChild(div);
-
-    setTimeout(() => {
-        if (document.body.contains(div)) {
-            div.remove();
-        }
-    }, 5000);
+  }, 5000);
 }
