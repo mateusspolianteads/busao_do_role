@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:busao_do_role/services/dio_client.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -16,9 +17,13 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
   bool carregando = false;
 
   Future<void> solicitarRecuperacao() async {
+    if (carregando) return;
+
     final email = emailController.text.trim();
 
     if (email.isEmpty) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, digite um e-mail válido.'),
@@ -35,43 +40,78 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
     try {
       final response = await DioClient.dio.post(
         '/usuarios/esqueci-senha',
-        data: {'email': email},
+        data: {
+          'email': email,
+        },
+        options: Options(
+          contentType: Headers.jsonContentType,
+        ),
       );
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Link de recuperação enviado com sucesso! Verifique seu e-mail.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        emailController.clear();
-        
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context);
-        });
+      ScaffoldMessenger.of(context).clearSnackBars();
 
-      } else {
-        final erroMsg = response.data is String
-            ? (jsonDecode(response.data))['detail'] ?? 'Erro ao enviar e-mail'
-            : response.data['detail'] ?? 'Erro ao enviar e-mail';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(erroMsg), backgroundColor: Colors.redAccent),
-        );
-      }
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Servidor offline ou erro de conexão.'),
+        SnackBar(
+          content: Text(
+            response.data['mensagem'] ??
+                'Link de recuperação enviado com sucesso!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      emailController.clear();
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
+    } on DioException catch (e) {
+      print("STATUS: ${e.response?.statusCode}");
+      print("DATA: ${e.response?.data}");
+
+      String mensagem = 'Erro ao enviar solicitação';
+
+      if (e.response?.data is Map) {
+        final detail = e.response?.data['detail'];
+
+        if (detail != null) {
+          mensagem = detail.toString();
+        }
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensagem),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } catch (e) {
+      print(e);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
           backgroundColor: Colors.redAccent,
         ),
       );
     } finally {
-      setState(() {
-        carregando = false;
-      });
+      if (mounted) {
+        setState(() {
+          carregando = false;
+        });
+      }
     }
   }
 
@@ -131,7 +171,7 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        
+
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
@@ -145,7 +185,7 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
                           ),
                         ),
                         const SizedBox(height: 35),
-                        
+
                         _buildExternalIconInput(
                           "E-mail",
                           "seu@email.com",
@@ -193,7 +233,7 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
                                   ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 25),
 
                         // Botão Voltar
@@ -267,7 +307,8 @@ class _EsqueciSenhaViewState extends State<EsqueciSenhaView> {
               hintStyle: const TextStyle(color: Color(0xFF666666)),
               filled: true,
               fillColor: Colors.white.withOpacity(0.03),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: Colors.white10),
